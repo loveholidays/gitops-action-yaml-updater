@@ -1,0 +1,41 @@
+name: 'Update yaml files in place'
+description: 'kubernetes yaml file updater'
+inputs:
+  mode:  # ENV_VAR or IMAGE_TAG
+    description: 'TYPE of the new value to be updated'
+    required: true
+    default: 'IMAGE_TAG'
+  container-name:
+    description: 'Name of the container'
+    required: true
+    default: ''
+  filepath:
+    description: 'Path to the yaml file'
+    required: true
+    default: ''
+
+
+  new-image-tag:
+    description: 'Tag value for the new image'
+    required: false
+    default: ''
+  env-name:
+    description: 'Env key value present in the container-name'
+    required: false
+    default: ''
+  new-env-value:
+    description: 'New value for env-name'
+    required: false
+    default: ''
+
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.mode }}
+    - ${{ inputs.container-name }}
+    - ${{ inputs.new-image-tag }}
+    - ${{ inputs.env-name }}
+    - ${{ inputs.new-env-value }}
+    - ${{ inputs.filepath }}
