@@ -1,0 +1,1 @@
+# gitops-action-yaml-updater
