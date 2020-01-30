@@ -2,28 +2,15 @@
 
 SUPPORTED_MODES=(ENV_VAR IMAGE_TAG)
 MODE=$1
-CONTAINER_NAME=""
-NEW_IMAGE_TAG=""
-FILEPATH=""
-ENV_NAME=""
-NEW_ENV_VALUE=""
+CONTAINER_NAME=$2
+FILEPATH=$3
+NEW_IMAGE_TAG=$4
+ENV_NAME=$5
+NEW_ENV_VALUE=$6
 
 if [[ ! " ${SUPPORTED_MODES[@]} " =~ " ${MODE} " ]]; then
   echo " +++++++++ ERROR MODE \"${MODE}\" is not part of the supported values [ ${SUPPORTED_MODES[@]} ] " >&2
   exit 1
-fi
-
-if [[ ${MODE} == "IMAGE_TAG" ]]; then
-  CONTAINER_NAME=$2
-  NEW_IMAGE_TAG=$3
-  FILEPATH=$4
-fi
-
-if [[ ${MODE} == "ENV_VAR" ]]; then
-  CONTAINER_NAME=$2
-  ENV_NAME=$3
-  NEW_ENV_VALUE=$4
-  FILEPATH=$5
 fi
 
 if test -f "${FILEPATH}"; then

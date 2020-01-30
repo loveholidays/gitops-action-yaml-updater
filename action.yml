@@ -35,7 +35,7 @@ runs:
   args:
     - ${{ inputs.mode }}
     - ${{ inputs.container-name }}
+    - ${{ inputs.filepath }}
     - ${{ inputs.new-image-tag }}
     - ${{ inputs.env-name }}
     - ${{ inputs.new-env-value }}
-    - ${{ inputs.filepath }}
