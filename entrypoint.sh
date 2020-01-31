@@ -16,13 +16,18 @@ fi
 if test -f "${FILEPATH}"; then
   echo " +++ + Updating file ${FILEPATH}"
 else
- echo " +++++++++ ERROR file \"${FILEPATH}\" does not exist" >&2
- exit 1
+  echo " +++++++++ ERROR file \"${FILEPATH}\" does not exist" >&2
+  exit 1
 fi
 
 
 if [[ ${MODE} == "IMAGE_TAG" ]]; then
   SUPPORTED_OBJECT_KINDS=(Deployment StatefulSet CronJob Kustomization)
+  if [ -z "${NEW_IMAGE_TAG}" ]; then
+    echo " +++++++++ ERROR NEW_IMAGE_TAG  \"${NEW_IMAGE_TAG}\" is not correct " >&2
+    exit 1
+  fi
+
   objectKind=$(yq r ${FILEPATH} kind)
   echo " +++ + Detected Object kind as \"${objectKind}\" "
 
@@ -32,49 +37,49 @@ if [[ ${MODE} == "IMAGE_TAG" ]]; then
   fi
 
   if [[ ${objectKind} == "Deployment" ]] || [[ ${objectKind} == "StatefulSet" ]] ; then
-      containerPosition=$(yq r ${FILEPATH} spec.template.spec.containers.*.name | grep -n ${CONTAINER_NAME}$ | cut -d: -f1)
-      containerIndex=$((${containerPosition/M/}-1))
-      if (( ${containerIndex} < 0 )); then
-        echo " +++++++++ ERROR container with name ${CONTAINER_NAME} could not be found in file  ${FILEPATH}" >&2
-        exit 1
-      fi
+    containerPosition=$(yq r ${FILEPATH} spec.template.spec.containers.*.name | grep -n ${CONTAINER_NAME}$ | cut -d: -f1)
+    containerIndex=$((${containerPosition/M/}-1))
+    if (( ${containerIndex} < 0 )); then
+      echo " +++++++++ ERROR container with name ${CONTAINER_NAME} could not be found in file  ${FILEPATH}" >&2
+      exit 1
+    fi
 
-      echo " +++ + Container Index $containerIndex"
-      currentImageValue=$(yq r ${FILEPATH} spec.template.spec.containers[${containerIndex}].image)
-      ocurrancesCount=$(grep -o "$currentImageValue" ${FILEPATH} | wc -l)
-      if (( ${ocurrancesCount} > 1 )); then
-          echo " +++++++++ ERROR Cannot update file ${FILEPATH}  as there are multiple occurrences of tag ${currentImageValue}" >&2
-          exit 1
-      fi
-      echo " +++ + + Processing image from $currentImageValue"
+    echo " +++ + Container Index $containerIndex"
+    currentImageValue=$(yq r ${FILEPATH} spec.template.spec.containers[${containerIndex}].image)
+    ocurrancesCount=$(grep -o "$currentImageValue" ${FILEPATH} | wc -l)
+    if (( ${ocurrancesCount} > 1 )); then
+      echo " +++++++++ ERROR Cannot update file ${FILEPATH}  as there are multiple occurrences of tag ${currentImageValue}" >&2
+      exit 1
+    fi
+    echo " +++ + + Processing image from $currentImageValue"
 
-      imageFullName=$(grep -Po '\K.*?(?=:)' <<< ${currentImageValue})
-      if [ -z "${imageFullName}" ]; then imageFullName=${currentImageValue}; fi
-      echo " +++ + + to new  image  tag    ${imageFullName}:${NEW_IMAGE_TAG}"
-      sed -i "s+${currentImageValue}+${imageFullName}:${NEW_IMAGE_TAG}+g" ${FILEPATH}
+    imageFullName=$(grep -Po '\K.*?(?=:)' <<< ${currentImageValue})
+    if [ -z "${imageFullName}" ]; then imageFullName=${currentImageValue}; fi
+    echo " +++ + + to new  image  tag    ${imageFullName}:${NEW_IMAGE_TAG}"
+    sed -i "s+${currentImageValue}+${imageFullName}:${NEW_IMAGE_TAG}+g" ${FILEPATH}
   fi
 
   if [[ ${objectKind} == "CronJob" ]] ; then
-      containerPosition=$(yq r ${FILEPATH} spec.jobTemplate.spec.template.spec.containers.*.name | grep -n ${CONTAINER_NAME}$ | cut -d: -f1)
-      containerIndex=$((${containerPosition/M/}-1))
-      if (( ${containerIndex} < 0 )); then
-        echo " +++++++++ ERROR container with name ${CONTAINER_NAME} could not be found in file CronJob  ${FILEPATH}" >&2
-        exit 1
-      fi
+    containerPosition=$(yq r ${FILEPATH} spec.jobTemplate.spec.template.spec.containers.*.name | grep -n ${CONTAINER_NAME}$ | cut -d: -f1)
+    containerIndex=$((${containerPosition/M/}-1))
+    if (( ${containerIndex} < 0 )); then
+      echo " +++++++++ ERROR container with name ${CONTAINER_NAME} could not be found in file CronJob  ${FILEPATH}" >&2
+      exit 1
+    fi
 
-      echo " +++ + Container Index in CronJob $containerIndex"
-      currentImageValue=$(yq r ${FILEPATH} spec.jobTemplate.spec.template.spec.containers[${containerIndex}].image)
-      ocurrancesCount=$(grep -o "$currentImageValue" ${FILEPATH} | wc -l)
-      if (( ${ocurrancesCount} > 1 )); then
-          echo " +++++++++ ERROR Cannot update file ${FILEPATH}  as there are multiple occurrences of tag ${currentImageValue}" >&2
-          exit 1
-      fi
-      echo " +++ + + Processing image from $currentImageValue"
+    echo " +++ + Container Index in CronJob $containerIndex"
+    currentImageValue=$(yq r ${FILEPATH} spec.jobTemplate.spec.template.spec.containers[${containerIndex}].image)
+    ocurrancesCount=$(grep -o "$currentImageValue" ${FILEPATH} | wc -l)
+    if (( ${ocurrancesCount} > 1 )); then
+      echo " +++++++++ ERROR Cannot update file ${FILEPATH}  as there are multiple occurrences of tag ${currentImageValue}" >&2
+      exit 1
+    fi
+    echo " +++ + + Processing image from $currentImageValue"
 
-      imageFullName=$(grep -Po '\K.*?(?=:)' <<< ${currentImageValue})
-      if [ -z "${imageFullName}" ]; then imageFullName=${currentImageValue}; fi
-      echo " +++ + + to new  image  tag    ${imageFullName}:${NEW_IMAGE_TAG}"
-      sed -i "s+${currentImageValue}+${imageFullName}:${NEW_IMAGE_TAG}+g" ${FILEPATH}
+    imageFullName=$(grep -Po '\K.*?(?=:)' <<< ${currentImageValue})
+    if [ -z "${imageFullName}" ]; then imageFullName=${currentImageValue}; fi
+    echo " +++ + + to new  image  tag    ${imageFullName}:${NEW_IMAGE_TAG}"
+    sed -i "s+${currentImageValue}+${imageFullName}:${NEW_IMAGE_TAG}+g" ${FILEPATH}
   fi
 
 
@@ -112,8 +117,8 @@ if [[ ${MODE} == "IMAGE_TAG" ]]; then
     kustomizeCurrentNewTagValue=$(yq r ${FILEPATH} images[${kustomizeContainerIndex}].newTag)
     ocurrancesCount=$(grep -o "$kustomizeCurrentNewTagValue" ${FILEPATH} | wc -l)
     if (( ${ocurrancesCount} > 1 )); then
-        echo " +++++++++ ERROR Cannot update file ${FILEPATH}  as there are multiple occurrences of string ${kustomizeCurrentNewTagValue}" >&2
-        exit 1
+      echo " +++++++++ ERROR Cannot update file ${FILEPATH}  as there are multiple occurrences of string ${kustomizeCurrentNewTagValue}" >&2
+      exit 1
     fi
     echo " +++ + + Processing newTag for image name: $kustomizeImageNameToUpdate"
     echo " +++ + + + from newTag: ${kustomizeCurrentNewTagValue}"
@@ -150,14 +155,13 @@ if [[ ${MODE} == "ENV_VAR" ]]; then
     currentEnvValue=$(yq r ${FILEPATH} spec.template.spec.containers[${containerIndex}].env[${envIndex}].value)
     ocurrancesCount=$(grep -o "$currentEnvValue" ${FILEPATH} | wc -l)
     if (( ${ocurrancesCount} > 1 )); then
-        echo " +++++++++ ERROR Cannot update file ${FILEPATH}  as there are multiple occurrences of string ${currentEnvValue}" >&2
-        exit 1
+      echo " +++++++++ ERROR Cannot update file ${FILEPATH}  as there are multiple occurrences of string ${currentEnvValue}" >&2
+      exit 1
     fi
     echo " +++ + + Updating ${ENV_NAME} in container ${CONTAINER_NAME} from ${currentEnvValue}"
     echo " +++ + + To env   ${ENV_NAME} in container ${CONTAINER_NAME} to   ${NEW_ENV_VALUE}"
     sanitizedOldString=$(echo $currentEnvValue | sed 's/[][`~!@#$%^&*()-+{}\|;:_=",<.>/?'"'"']/\\&/g')
     sanitizedNewString=$(echo $NEW_ENV_VALUE | sed 's/[][`~!@#$%^&*()-+{}\|;:_=",<.>/?'"'"']/\\&/g')
-    echo "sed -i s+${sanitizedOldString}+${sanitizedNewString}+g ${FILEPATH}"
     sed -i "s+${sanitizedOldString}+${sanitizedNewString}+g" ${FILEPATH}
   fi
 fi

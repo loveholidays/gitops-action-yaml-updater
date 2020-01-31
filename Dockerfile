@@ -1,7 +1,4 @@
-FROM launcher.gcr.io/google/ubuntu16_04
-
-RUN apt-get -y update && \
-    apt-get -y install wget curl git
+FROM ubuntu:18.04
 
 RUN wget -nv https://github.com/mikefarah/yq/releases/download/2.1.1/yq_linux_amd64 && \
     chmod 744 yq_linux_amd64 && \
