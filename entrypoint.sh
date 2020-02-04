@@ -39,13 +39,17 @@ if [[ ${MODE} == "IMAGE_TAG" ]]; then
   if [[ ${objectKind} == "Deployment" ]] || [[ ${objectKind} == "StatefulSet" ]] ; then
     containerPosition=$(yq r ${FILEPATH} spec.template.spec.containers.*.name | grep -n ${CONTAINER_NAME}$ | cut -d: -f1)
     containerIndex=$((${containerPosition/M/}-1))
-    if (( ${containerIndex} < 0 )); then
+    if (( ${containerIndex} < 0 )) ; then
       echo " +++++++++ ERROR container with name ${CONTAINER_NAME} could not be found in file  ${FILEPATH}" >&2
       exit 1
     fi
 
     echo " +++ + Container Index $containerIndex"
     currentImageValue=$(yq r ${FILEPATH} spec.template.spec.containers[${containerIndex}].image)
+    if [[ ${currentImageValue} == "null" ]]; then
+      echo " +++++++++ ERROR Cannot find image field for container named  ${CONTAINER_NAME} in file ${FILEPATH} " >&2
+      exit 1
+    fi
     ocurrancesCount=$(grep -o "$currentImageValue" ${FILEPATH} | wc -l)
     if (( ${ocurrancesCount} > 1 )); then
       echo " +++++++++ ERROR Cannot update file ${FILEPATH}  as there are multiple occurrences of tag ${currentImageValue}" >&2
@@ -69,6 +73,10 @@ if [[ ${MODE} == "IMAGE_TAG" ]]; then
 
     echo " +++ + Container Index in CronJob $containerIndex"
     currentImageValue=$(yq r ${FILEPATH} spec.jobTemplate.spec.template.spec.containers[${containerIndex}].image)
+    if [[ ${currentImageValue} == "null" ]]; then
+      echo " +++++++++ ERROR Cannot find image field for container named  ${CONTAINER_NAME} in file ${FILEPATH} " >&2
+      exit 1
+    fi
     ocurrancesCount=$(grep -o "$currentImageValue" ${FILEPATH} | wc -l)
     if (( ${ocurrancesCount} > 1 )); then
       echo " +++++++++ ERROR Cannot update file ${FILEPATH}  as there are multiple occurrences of tag ${currentImageValue}" >&2
