@@ -4,7 +4,7 @@ FROM alpine:3.16
 ENV KUSTOMIZE_VER 4.5.7
 
 RUN apk update && \
-    apk add wget curl bash
+    apk add wget curl bash grep
 
 RUN wget -nv https://github.com/mikefarah/yq/releases/download/2.1.1/yq_linux_amd64 && \
     chmod 744 yq_linux_amd64 && \
