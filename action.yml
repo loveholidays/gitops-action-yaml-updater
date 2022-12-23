@@ -9,8 +9,11 @@ inputs:
     description: 'Name of the container'
     required: true
     default: ''
+  dir:
+    description: 'The root directory of the base or overlay, i.e. overlays/production-eu'
+    required: true
   filepath:
-    description: 'Path to the yaml file'
+    description: 'Comma separated paths to YAML files'
     required: true
     default: ''
 
@@ -35,6 +38,7 @@ runs:
   args:
     - ${{ inputs.mode }}
     - ${{ inputs.container-name }}
+    - ${{ inputs.dir }}
     - ${{ inputs.filepath }}
     - ${{ inputs.new-image-tag }}
     - ${{ inputs.env-name }}
