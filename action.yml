@@ -31,7 +31,7 @@ inputs:
 
 runs:
   using: 'docker'
-  image: 'Dockerfile'
+  image: 'docker://ghcr.io/loveholidays/gitops-action-yaml-updater:v1.5.1'
   args:
     - ${{ inputs.mode }}
     - ${{ inputs.container-name }}
