@@ -1,0 +1,28 @@
+name: docker
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'master'
+    tags:
+      - "v*.*.*"
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ++ Export global vars for current job
+        id: current-job
+        run: |
+          if [ ${{github.ref_name}} = "master" ]; then
+            echo "::set-output name=VERSION::latest"
+          else
+            echo "::set-output name=VERSION::${{ github.ref_name }}"
+          fi
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/loveholidays/gitops-action-yaml-updater:${{ steps.current-job.outputs.VERSION }}
