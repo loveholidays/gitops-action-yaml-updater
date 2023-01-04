@@ -32,12 +32,12 @@ inputs:
 
 runs:
   using: 'docker'
-  image: 'docker://ghcr.io/loveholidays/gitops-action-yaml-updater:v1.5.1'
+  image: 'docker://ghcr.io/loveholidays/gitops-action-yaml-updater:v2.0.0'
   args:
     - ${{ inputs.mode }}
     - ${{ inputs.container-name }}
     - ${{ inputs.dir }}
-    - ${{ inputs.filepath }}
+    - ${{ inputs.files }}
     - ${{ inputs.new-image-tag }}
     - ${{ inputs.env-name }}
     - ${{ inputs.new-env-value }}
