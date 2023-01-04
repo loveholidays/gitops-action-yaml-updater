@@ -37,6 +37,7 @@ Multiple files can be specified comma separated, i.e. `packages/deployment-de.ya
 If action/checkout is used it is assumed that working directory is in the root of the cloned project
 
  Default `""`
+
 ### `new-image-tag`
 **Optional** The value of the new image tag
 
@@ -70,7 +71,17 @@ none
           mode: IMAGE_TAG
           container-name: nginx
           new-image-tag: prod-${{ steps.your-previous-step-id.outputs.GITHUB_SHORT_SHA }}
-          filepath: deployment.yaml
+          dir: overlays/development-eu
+          files: deployment.yaml
+
+      - name: Update image tag for container bridge in two files
+        uses: loveholidays/gitops-action-yaml-updater@v1.0
+        with:
+          mode: IMAGE_TAG
+          container-name: nginx
+          new-image-tag: prod-${{ steps.your-previous-step-id.outputs.GITHUB_SHORT_SHA }}
+          dir: kustomize-base
+          files: "web/bridge/deployment.yaml,web/bridge-api/deployment.yaml"
 
       - name: Update MY_GITHUB_SHORT_SHA env value for nginx container
         uses: loveholidays/gitops-action-yaml-updater@v1.0
@@ -79,4 +90,5 @@ none
           container-name: nginx
           env-name: MY_GITHUB_SHORT_SHA
           new-env-value: ${{ steps.your-previous-step-id.outputs.GITHUB_SHORT_SHA }}
-          filepath: deployment.yaml
+          dir: overlays/development-eu
+          files: deployment.yaml

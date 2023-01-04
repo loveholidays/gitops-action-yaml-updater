@@ -12,12 +12,10 @@ inputs:
   dir:
     description: 'The root directory of the base or overlay, i.e. overlays/production-eu'
     required: true
-  filepath:
+  files:
     description: 'Comma separated paths to YAML files'
     required: true
     default: ''
-
-
   new-image-tag:
     description: 'Tag value for the new image'
     required: false
