@@ -19,10 +19,21 @@ For Environment variable values we support
 `Deployment StatefulSet` object types
 
 Default `""`
-### `filepath`
+
+### `dir`
+**Required** The root directory of the base or overlay. Should be one of:
+* kustomize-base
+* overlays/development-eu
+* overlays/staging-eu
+* overlays/production-eu 
+
+### `files`
 **Required** The name of the file that holds the container image name
 
 Expects relative path from the current working directory. 
+
+Multiple files can be specified comma separated, i.e. `packages/deployment-de.yaml,packages/deployment-gb.yaml,packages/deployment-ie.yaml`.
+
 If action/checkout is used it is assumed that working directory is in the root of the cloned project
 
  Default `""`
