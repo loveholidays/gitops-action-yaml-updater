@@ -27,7 +27,7 @@ Default `""`
 * overlays/staging-eu
 * overlays/production-eu 
 
-### `filepath`
+### `files`
 **Required** The name of the file that holds the container image name
 
 Expects relative path from the current working directory. 
