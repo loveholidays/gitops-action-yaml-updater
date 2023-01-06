@@ -3,23 +3,18 @@
 SUPPORTED_MODES=(ENV_VAR IMAGE_TAG)
 MODE=$1
 CONTAINER_NAME=$2
-DIR=$3
-FILES=$4
-NEW_IMAGE_TAG=$5
-ENV_NAME=$6
-NEW_ENV_VALUE=$7
+FILES=$3
+NEW_IMAGE_TAG=$4
+ENV_NAME=$5
+NEW_ENV_VALUE=$6
 
 if [[ ! " ${SUPPORTED_MODES[@]} " =~ " ${MODE} " ]]; then
   echo " +++++++++ ERROR MODE \"${MODE}\" is not part of the supported values [ ${SUPPORTED_MODES[@]} ] " >&2
   exit 1
 fi
 
-# Ensure DIR has trailing slash
-[[ "${DIR}" != */ ]] && DIR="${DIR}/"
-
 IFS=","
-for file in $FILES; do
-  FILEPATH="${DIR}${file}"
+for FILEPATH in $FILES; do
 
   if test -f "${FILEPATH}"; then
     echo " +++ + Updating file ${FILEPATH}"
