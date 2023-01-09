@@ -53,11 +53,7 @@ for FILEPATH in $FILES; do
         echo " +++++++++ ERROR Cannot find image field for container named  ${CONTAINER_NAME} in file ${FILEPATH} " >&2
         exit 1
       fi
-      ocurrancesCount=$(grep -o "$currentImageValue" ${FILEPATH} | wc -l)
-      if (( ${ocurrancesCount} > 1 )); then
-        echo " +++++++++ ERROR Cannot update file ${FILEPATH}  as there are multiple occurrences of tag ${currentImageValue}" >&2
-        exit 1
-      fi
+
       echo " +++ + + Processing image from $currentImageValue"
 
       imageFullName=$(grep -Po '\K.*?(?=:)' <<< ${currentImageValue})
@@ -80,11 +76,7 @@ for FILEPATH in $FILES; do
         echo " +++++++++ ERROR Cannot find image field for container named  ${CONTAINER_NAME} in file ${FILEPATH} " >&2
         exit 1
       fi
-      ocurrancesCount=$(grep -o "$currentImageValue" ${FILEPATH} | wc -l)
-      if (( ${ocurrancesCount} > 1 )); then
-        echo " +++++++++ ERROR Cannot update file ${FILEPATH}  as there are multiple occurrences of tag ${currentImageValue}" >&2
-        exit 1
-      fi
+
       echo " +++ + + Processing image from $currentImageValue"
 
       imageFullName=$(grep -Po '\K.*?(?=:)' <<< ${currentImageValue})
@@ -126,11 +118,7 @@ for FILEPATH in $FILES; do
       kustomizeImageNamePosition=$(yq r ${FILEPATH} images.*.name | grep -n ${kustomizeImageNameToUpdate} | cut -d: -f1)
       kustomizeContainerIndex=$((${kustomizeImageNamePosition/M/}-1))
       kustomizeCurrentNewTagValue=$(yq r ${FILEPATH} images[${kustomizeContainerIndex}].newTag)
-      ocurrancesCount=$(grep -o "$kustomizeCurrentNewTagValue" ${FILEPATH} | wc -l)
-      if (( ${ocurrancesCount} > 1 )); then
-        echo " +++++++++ ERROR Cannot update file ${FILEPATH}  as there are multiple occurrences of string ${kustomizeCurrentNewTagValue}" >&2
-        exit 1
-      fi
+
       echo " +++ + + Processing newTag for image name: $kustomizeImageNameToUpdate"
       echo " +++ + + + from newTag: ${kustomizeCurrentNewTagValue}"
       echo " +++ + + + to   newTag: ${NEW_IMAGE_TAG}"
@@ -164,11 +152,7 @@ for FILEPATH in $FILES; do
         exit 1
       fi
       currentEnvValue=$(yq r ${FILEPATH} spec.template.spec.containers[${containerIndex}].env[${envIndex}].value)
-      ocurrancesCount=$(grep -o "$currentEnvValue" ${FILEPATH} | wc -l)
-      if (( ${ocurrancesCount} > 1 )); then
-        echo " +++++++++ ERROR Cannot update file ${FILEPATH}  as there are multiple occurrences of string ${currentEnvValue}" >&2
-        exit 1
-      fi
+
       echo " +++ + + Updating ${ENV_NAME} in container ${CONTAINER_NAME} from ${currentEnvValue}"
       echo " +++ + + To env   ${ENV_NAME} in container ${CONTAINER_NAME} to   ${NEW_ENV_VALUE}"
       sanitizedOldString=$(echo $currentEnvValue | sed 's/[][`~!@#$%^&*()-+{}\|;:_=",<.>/?'"'"']/\\&/g')
