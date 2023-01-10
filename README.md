@@ -9,7 +9,7 @@ This also supports kustomize images: newTag directive
 ## Inputs
 ### `mode`
 **Required** The value intended to be updated ENV_VAR or IMAGE_TAG. Default `""`.
-### `container-name`
+### `container-names`
 **Required** The name of the container present in the pod definition
 
 For docker container image tag we support
@@ -17,6 +17,8 @@ For docker container image tag we support
 
 For Environment variable values we support
 `Deployment StatefulSet` object types
+
+Multiple files can be specified comma separated, i.e.  `container-1,container-2`
 
 Default `""`
 
