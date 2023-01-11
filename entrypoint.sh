@@ -14,13 +14,19 @@ if [[ ! " ${SUPPORTED_MODES[@]} " =~ " ${MODE} " ]]; then
 fi
 
 IFS=","
+
+CONTAINER_NAMES=$(echo $CONTAINER_NAMES | sed 's/'$IFS'/|/g')
+
 for FILEPATH in $FILES; do
+
   if test -f "${FILEPATH}"; then
     echo " +++ + Updating file ${FILEPATH}"
   else
     echo " +++++++++ ERROR file \"${FILEPATH}\" does not exist" >&2
     exit 1
   fi
+  
+  CONTAINER_NAME=$(yq r ${FILEPATH} spec.template.spec.containers.*.name | grep -E ${CONTAINER_NAMES}$)
 
 
   if [[ ${MODE} == "IMAGE_TAG" ]]; then
