@@ -42,10 +42,10 @@ for FILEPATH in $FILES; do
       if [[ ${objectKind} == "Deployment" ]] || [[ ${objectKind} == "StatefulSet" ]] ; then
         containerPosition=$(yq r ${FILEPATH} spec.template.spec.containers.*.name | grep -n ${CONTAINER_NAME}$ | cut -d: -f1)
         containerIndex=$((${containerPosition/M/}-1))
-        if (( ${containerIndex} < 0 )) ; then
-          echo " +++++++++ ERROR container with name ${CONTAINER_NAME} could not be found in file  ${FILEPATH}" >&2
-          exit 1
-        fi
+        # if (( ${containerIndex} < 0 )) ; then
+        #   echo " +++++++++ ERROR container with name ${CONTAINER_NAME} could not be found in file  ${FILEPATH}" >&2
+        #   exit 1
+        # fi
 
         echo " +++ + Container Index $containerIndex"
         currentImageValue=$(yq r ${FILEPATH} spec.template.spec.containers[${containerIndex}].image)
