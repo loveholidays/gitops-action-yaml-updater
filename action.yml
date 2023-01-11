@@ -5,7 +5,7 @@ inputs:
     description: 'TYPE of the new value to be updated'
     required: true
     default: 'IMAGE_TAG'
-  container-names:
+  container-name:
     description: 'Comma separated Names of the containers'
     required: true
     default: ''
@@ -17,7 +17,7 @@ inputs:
     required: false
     default: ''
   env-name:
-    description: 'Env key value present in the container-names'
+    description: 'Env key value present in the container-name'
     required: false
     default: ''
   new-env-value:
@@ -31,7 +31,7 @@ runs:
   image: 'docker://ghcr.io/loveholidays/gitops-action-yaml-updater:v1.7.0'
   args:
     - ${{ inputs.mode }}
-    - ${{ inputs.container-names }}
+    - ${{ inputs.container-name }}
     - ${{ inputs.files }}
     - ${{ inputs.new-image-tag }}
     - ${{ inputs.env-name }}
