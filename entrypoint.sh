@@ -14,8 +14,7 @@ if [[ ! " ${SUPPORTED_MODES[@]} " =~ " ${MODE} " ]]; then
 fi
 
 IFS=","
-
-CONTAINER_NAMES=$(echo $CONTAINER_NAMES | sed 's/'$IFS'/|/g')
+CONTAINER_NAMES=$(echo $CONTAINER_NAMES | sed "s/$IFS/|/g")
 
 for FILEPATH in $FILES; do
 
