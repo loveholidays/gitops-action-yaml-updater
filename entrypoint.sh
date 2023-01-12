@@ -24,8 +24,8 @@ for FILEPATH in $FILES; do
     echo " +++++++++ ERROR file \"${FILEPATH}\" does not exist" >&2
     exit 1
   fi
-  
-  CONTAINER_NAME=$(yq r ${FILEPATH} spec.template.spec.containers.*.name | grep -E ${CONTAINER_NAMES}$)
+
+  CONTAINER_NAME=$(yq r ${FILEPATH} spec.template.spec.containers.*.name | grep -E ${CONTAINER_NAMES}$ | sed "s/- //g")
 
 
   if [[ ${MODE} == "IMAGE_TAG" ]]; then
