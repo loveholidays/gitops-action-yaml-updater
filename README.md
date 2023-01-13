@@ -18,7 +18,7 @@ For docker container image tag we support
 For Environment variable values we support
 `Deployment StatefulSet` object types
 
-Multiple files can be specified comma separated, i.e.  `container-1,container-2`
+Multiple container names can be specified comma separated, i.e.  `container-1,container-2`
 
 Default `""`
 
