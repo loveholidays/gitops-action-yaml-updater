@@ -14,9 +14,12 @@ if [[ ! " ${SUPPORTED_MODES[@]} " =~ " ${MODE} " ]]; then
 fi
 
 IFS=","
-CONTAINER_NAMES=$(echo $CONTAINER_NAMES | sed "s/$IFS/|/g")
+CONTAINER_NAMES=$(echo $CONTAINER_NAMES | sed "s/ /|/g")
 
 for FILEPATH in $FILES; do
+
+DOCUMENTS=$(yq document_index ${FILEPATH} | sed -n 'p;n' | tr '\n' ',')
+for DOCUMENT in $DOCUMENTS; do
 
   if test -f "${FILEPATH}"; then
     echo " +++ + Updating file ${FILEPATH}"
@@ -24,9 +27,14 @@ for FILEPATH in $FILES; do
     echo " +++++++++ ERROR file \"${FILEPATH}\" does not exist" >&2
     exit 1
   fi
+  echo " ++++ Reading Document ${DOCUMENT}"
 
-  CONTAINER_NAME=$(yq r ${FILEPATH} spec.template.spec.containers.*.name | grep -E ${CONTAINER_NAMES}$ | sed "s/- //g")
-
+  CONTAINER_NAME=$(yq ".spec.template.spec.containers.[].name | select(document_index == ${DOCUMENT}) | select(test(\"^(${CONTAINER_NAMES})$\"))" ${FILEPATH});
+  
+  if [[ -z $CONTAINER_NAME ]]; then
+    echo "++++ No Container update for Document ${DOCUMENT}";
+    break 1;
+  fi
 
   if [[ ${MODE} == "IMAGE_TAG" ]]; then
     SUPPORTED_OBJECT_KINDS=(Deployment StatefulSet CronJob Kustomization)
@@ -35,7 +43,7 @@ for FILEPATH in $FILES; do
       exit 1
     fi
 
-    objectKind=$(yq r ${FILEPATH} kind)
+    objectKind=$(yq ".kind | select(document_index == ${DOCUMENT})" ${FILEPATH})
     echo " +++ + Detected Object kind as \"${objectKind}\" "
 
     if [[ ! " ${SUPPORTED_OBJECT_KINDS[@]} " =~ " ${objectKind} " ]]; then
@@ -44,7 +52,7 @@ for FILEPATH in $FILES; do
     fi
 
     if [[ ${objectKind} == "Deployment" ]] || [[ ${objectKind} == "StatefulSet" ]] ; then
-      containerPosition=$(yq r ${FILEPATH} spec.template.spec.containers.*.name | grep -n ${CONTAINER_NAME}$ | cut -d: -f1)
+      containerPosition=$(yq ".spec.template.spec.containers.[].name | select(document_index == ${DOCUMENT}) | select(test(\"^(${CONTAINER_NAMES})$\"))" ${FILEPATH} | grep -n ${CONTAINER_NAME}$ | cut -d: -f1)
       containerIndex=$((${containerPosition/M/}-1))
       if (( ${containerIndex} < 0 )) ; then
         echo " +++++++++ ERROR container with name ${CONTAINER_NAME} could not be found in file  ${FILEPATH}" >&2
@@ -52,7 +60,7 @@ for FILEPATH in $FILES; do
       fi
 
       echo " +++ + Container Index $containerIndex"
-      currentImageValue=$(yq r ${FILEPATH} spec.template.spec.containers[${containerIndex}].image)
+      currentImageValue=$(yq ".spec.template.spec.containers[${containerIndex}].image | select(document_index == ${DOCUMENT})" ${FILEPATH})
       if [[ ${currentImageValue} == "null" ]]; then
         echo " +++++++++ ERROR Cannot find image field for container named  ${CONTAINER_NAME} in file ${FILEPATH} " >&2
         exit 1
@@ -164,4 +172,6 @@ for FILEPATH in $FILES; do
       sed -i "s+${sanitizedOldString}+${sanitizedNewString}+g" ${FILEPATH}
     fi
   fi;
+done
+
 done

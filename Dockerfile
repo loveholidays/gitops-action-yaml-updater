@@ -4,7 +4,7 @@ FROM alpine:3.16
 RUN apk update && \
     apk add wget curl bash grep
 
-RUN wget -nv https://github.com/mikefarah/yq/releases/download/2.1.1/yq_linux_amd64 && \
+RUN wget -nv https://github.com/mikefarah/yq/releases/download/v4.30.6/yq_linux_amd64 && \
     chmod 744 yq_linux_amd64 && \
     mv yq_linux_amd64 /usr/local/bin/yq && \
     curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash && \
