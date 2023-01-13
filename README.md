@@ -9,7 +9,7 @@ This also supports kustomize images: newTag directive
 ## Inputs
 ### `mode`
 **Required** The value intended to be updated ENV_VAR or IMAGE_TAG. Default `""`.
-### `container-names`
+### `container-name`
 **Required** The name of the container present in the pod definition
 
 For docker container image tag we support
