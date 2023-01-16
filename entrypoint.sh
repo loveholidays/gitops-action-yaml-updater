@@ -75,7 +75,7 @@ for DOCUMENT in $DOCUMENTS; do
     fi
 
     if [[ ${objectKind} == "CronJob" ]] ; then
-      containerPosition=$(yq r ${FILEPATH} spec.jobTemplate.spec.template.spec.containers.*.name | grep -n ${CONTAINER_NAME}$ | cut -d: -f1)
+      containerPosition=$(yq ".spec.template.spec.containers.[].name | select(document_index == ${DOCUMENT}) | select(test(\"^(${CONTAINER_NAMES})$\"))" ${FILEPATH} | grep -n ${CONTAINER_NAME}$ | cut -d: -f1)
       containerIndex=$((${containerPosition/M/}-1))
       if (( ${containerIndex} < 0 )); then
         echo " +++++++++ ERROR container with name ${CONTAINER_NAME} could not be found in file CronJob  ${FILEPATH}" >&2
@@ -83,7 +83,7 @@ for DOCUMENT in $DOCUMENTS; do
       fi
 
       echo " +++ + Container Index in CronJob $containerIndex"
-      currentImageValue=$(yq r ${FILEPATH} spec.jobTemplate.spec.template.spec.containers[${containerIndex}].image)
+      currentImageValue=$(yq ".spec.template.spec.containers[${containerIndex}].image | select(document_index == ${DOCUMENT})" ${FILEPATH})
       if [[ ${currentImageValue} == "null" ]]; then
         echo " +++++++++ ERROR Cannot find image field for container named  ${CONTAINER_NAME} in file ${FILEPATH} " >&2
         exit 1
