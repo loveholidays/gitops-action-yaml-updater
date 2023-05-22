@@ -8,7 +8,7 @@ This also supports kustomize images: newTag directive
 
 ## Inputs
 ### `mode`
-**Required** The value intended to be updated ENV_VAR or IMAGE_TAG. Default `""`.
+**Required** The value intended to be updated ENV_VAR or IMAGE_TAG or HELM_VALUES. Default `""`.
 ### `container-name`
 **Required** The name of the container present in the pod definition
 
