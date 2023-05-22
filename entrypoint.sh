@@ -1,12 +1,13 @@
 #!/bin/bash
 
-SUPPORTED_MODES=(ENV_VAR IMAGE_TAG)
+SUPPORTED_MODES=(ENV_VAR IMAGE_TAG HELM_VALUES)
 MODE=$1
 CONTAINER_NAME=$2
 FILES=$3
 NEW_IMAGE_TAG=$4
 ENV_NAME=$5
 NEW_ENV_VALUE=$6
+HELM_IMAGE_KEY="image.tag"
 
 if [[ ! " ${SUPPORTED_MODES[@]} " =~ " ${MODE} " ]]; then
   echo " +++++++++ ERROR MODE \"${MODE}\" is not part of the supported values [ ${SUPPORTED_MODES[@]} ] " >&2
@@ -160,4 +161,9 @@ for FILEPATH in $FILES; do
       sed -i "s+${sanitizedOldString}+${sanitizedNewString}+g" ${FILEPATH}
     fi
   fi;
+
+  if [[ ${MODE} == "HELM_VALUES" ]]; then
+    yq w -i ${FILEPATH} ${HELM_IMAGE_KEY} ${NEW_IMAGE_TAG}
+    echo "+++ + + Updated ${HELM_IMAGE_KEY} key in ${FILEPATH} to ${NEW_IMAGE_TAG}"
+  fi
 done
