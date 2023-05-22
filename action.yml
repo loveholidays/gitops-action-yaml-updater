@@ -1,7 +1,7 @@
 name: 'Update yaml files in place'
 description: 'kubernetes yaml file updater'
 inputs:
-  mode:  # ENV_VAR or IMAGE_TAG
+  mode:  # ENV_VAR or IMAGE_TAG or HELM_VALUES
     description: 'TYPE of the new value to be updated'
     required: true
     default: 'IMAGE_TAG'
@@ -28,7 +28,7 @@ inputs:
 
 runs:
   using: 'docker'
-  image: 'docker://ghcr.io/loveholidays/gitops-action-yaml-updater:v1.7.0'
+  image: 'docker://ghcr.io/loveholidays/gitops-action-yaml-updater:v1.8.0'
   args:
     - ${{ inputs.mode }}
     - ${{ inputs.container-name }}
