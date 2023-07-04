@@ -163,7 +163,7 @@ for FILEPATH in $FILES; do
   fi;
 
   if [[ ${MODE} == "HELM_VALUES" ]]; then
-    yq w -i ${FILEPATH} ${HELM_IMAGE_KEY} ${NEW_IMAGE_TAG}
+    yq w -i ${FILEPATH} ${HELM_IMAGE_KEY} "\"${NEW_IMAGE_TAG}\""
     echo "+++ + + Updated ${HELM_IMAGE_KEY} key in ${FILEPATH} to ${NEW_IMAGE_TAG}"
   fi
 done
