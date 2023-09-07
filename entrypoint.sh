@@ -166,7 +166,8 @@ for FILEPATH in $FILES; do
   if [[ ${MODE} == "HELM_VALUES" ]]; then
     if yq4 'has("cronJobs")' "${FILEPATH}" 2>/dev/null; then
       yq4 "${HELM_CRONJOB_IMAGE_KEY} = \"${NEW_IMAGE_TAG}\"" -i ${FILEPATH}
-    else
+    fi
+    if yq4 'has("image")' "${FILEPATH}" 2>/dev/null; then
       yq4 "${HELM_IMAGE_KEY} = \"${NEW_IMAGE_TAG}\"" -i ${FILEPATH}
     fi
     echo "+++ + + Updated ${HELM_IMAGE_KEY} key in ${FILEPATH} to ${NEW_IMAGE_TAG}"
