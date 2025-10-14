@@ -1,5 +1,16 @@
 #!/bin/bash
 
+# Cross-platform sed in-place editing
+sed_inplace() {
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS requires an extension argument (empty string for no backup)
+    sed -i '' "$@"
+  else
+    # Linux/GNU sed
+    sed -i "$@"
+  fi
+}
+
 SUPPORTED_MODES=(ENV_VAR IMAGE_TAG HELM_VALUES)
 MODE=$1
 CONTAINER_NAME=$2
@@ -58,10 +69,10 @@ for FILEPATH in $FILES; do
 
       echo " +++ + + Processing image from $currentImageValue"
 
-      imageFullName=$(grep -Po '\K.*?(?=:)' <<< ${currentImageValue})
-      if [ -z "${imageFullName}" ]; then imageFullName=${currentImageValue}; fi
+      # Extract image name without tag (everything before ':')
+      imageFullName="${currentImageValue%%:*}"
       echo " +++ + + to new  image  tag    ${imageFullName}:${NEW_IMAGE_TAG}"
-      sed -i "s+${currentImageValue}+${imageFullName}:${NEW_IMAGE_TAG}+g" ${FILEPATH}
+      sed_inplace "s+${currentImageValue}+${imageFullName}:${NEW_IMAGE_TAG}+g" ${FILEPATH}
     fi
 
     if [[ ${objectKind} == "CronJob" ]] ; then
@@ -81,10 +92,10 @@ for FILEPATH in $FILES; do
 
       echo " +++ + + Processing image from $currentImageValue"
 
-      imageFullName=$(grep -Po '\K.*?(?=:)' <<< ${currentImageValue})
-      if [ -z "${imageFullName}" ]; then imageFullName=${currentImageValue}; fi
+      # Extract image name without tag (everything before ':')
+      imageFullName="${currentImageValue%%:*}"
       echo " +++ + + to new  image  tag    ${imageFullName}:${NEW_IMAGE_TAG}"
-      sed -i "s+${currentImageValue}+${imageFullName}:${NEW_IMAGE_TAG}+g" ${FILEPATH}
+      sed_inplace "s+${currentImageValue}+${imageFullName}:${NEW_IMAGE_TAG}+g" ${FILEPATH}
     fi
 
 
@@ -105,8 +116,8 @@ for FILEPATH in $FILES; do
             if [[ ! $currentImageValue ]]; then
               currentImageValue=$(echo "$object" | yq r - spec.jobTemplate.spec.template.spec.containers[${containerIndex}].image)
             fi
-            imageFullName=$(grep -Po '\K.*?(?=:)' <<< ${currentImageValue})
-            if [ -z "${imageFullName}" ]; then imageFullName=${currentImageValue}; fi
+            # Extract image name without tag (everything before ':')
+            imageFullName="${currentImageValue%%:*}"
             kustomizeImageNameToUpdate=${imageFullName}
           fi
           s=${s#*"$delimiter"};
@@ -124,7 +135,7 @@ for FILEPATH in $FILES; do
       echo " +++ + + Processing newTag for image name: $kustomizeImageNameToUpdate"
       echo " +++ + + + from newTag: ${kustomizeCurrentNewTagValue}"
       echo " +++ + + + to   newTag: ${NEW_IMAGE_TAG}"
-      sed -i "s+${kustomizeCurrentNewTagValue}+${NEW_IMAGE_TAG}+g" ${FILEPATH}
+      sed_inplace "s+${kustomizeCurrentNewTagValue}+${NEW_IMAGE_TAG}+g" ${FILEPATH}
     fi
   fi
 
@@ -159,7 +170,7 @@ for FILEPATH in $FILES; do
       echo " +++ + + To env   ${ENV_NAME} in container ${CONTAINER_NAME} to   ${NEW_ENV_VALUE}"
       sanitizedOldString=$(echo $currentEnvValue | sed 's/[][`~!@#$%^&*()-+{}\|;:_=",<.>/?'"'"']/\\&/g')
       sanitizedNewString=$(echo $NEW_ENV_VALUE | sed 's/[][`~!@#$%^&*()-+{}\|;:_=",<.>/?'"'"']/\\&/g')
-      sed -i "s+${sanitizedOldString}+${sanitizedNewString}+g" ${FILEPATH}
+      sed_inplace "s+${sanitizedOldString}+${sanitizedNewString}+g" ${FILEPATH}
     fi
   fi;
 
