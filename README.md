@@ -18,6 +18,13 @@ For docker container image tag we support
 For Environment variable values we support
 `Deployment StatefulSet` object types
 
+For Helm values files (HELM_VALUES mode), the action supports:
+- Default container images (`.image.tag`)
+- Additional containers (`.containers.<container-name>.image.tag`)
+- CronJob images (`.cronJobs.*.image.tag` or `.cronJobs.<container-name>.image.tag`)
+
+The action automatically detects whether you're updating the default container or an additional container by reading the `containerName` field from the Helm values file.
+
 Default `""`
 
 ### `files`
@@ -58,30 +65,69 @@ none
 
 ## Example usage
 
-      - name: Update image tag for container nginx in deployment.yaml
-        uses: loveholidays/gitops-action-yaml-updater@v1.0
-        with:
-          mode: IMAGE_TAG
-          container-name: nginx
-          new-image-tag: prod-${{ steps.your-previous-step-id.outputs.GITHUB_SHORT_SHA }}
-          dir: overlays/development-eu
-          files: deployment.yaml
+### IMAGE_TAG mode - Update Kubernetes Deployment
 
-      - name: Update image tag for container bridge in two files
-        uses: loveholidays/gitops-action-yaml-updater@v1.0
-        with:
-          mode: IMAGE_TAG
-          container-name: nginx
-          new-image-tag: prod-${{ steps.your-previous-step-id.outputs.GITHUB_SHORT_SHA }}
-          dir: kustomize-base
-          files: "web/bridge/deployment.yaml,web/bridge-api/deployment.yaml"
+```yaml
+- name: Update image tag for container nginx in deployment.yaml
+  uses: loveholidays/gitops-action-yaml-updater@v1.8.2
+  with:
+    mode: IMAGE_TAG
+    container-name: nginx
+    new-image-tag: prod-${{ steps.your-previous-step-id.outputs.GITHUB_SHORT_SHA }}
+    files: overlays/development-eu/deployment.yaml
+```
 
-      - name: Update MY_GITHUB_SHORT_SHA env value for nginx container
-        uses: loveholidays/gitops-action-yaml-updater@v1.0
-        with:
-          mode: ENV_VAR
-          container-name: nginx
-          env-name: MY_GITHUB_SHORT_SHA
-          new-env-value: ${{ steps.your-previous-step-id.outputs.GITHUB_SHORT_SHA }}
-          dir: overlays/development-eu
-          files: deployment.yaml
+### IMAGE_TAG mode - Update multiple files
+
+```yaml
+- name: Update image tag for container bridge in two files
+  uses: loveholidays/gitops-action-yaml-updater@v1.8.2
+  with:
+    mode: IMAGE_TAG
+    container-name: nginx
+    new-image-tag: prod-${{ steps.your-previous-step-id.outputs.GITHUB_SHORT_SHA }}
+    files: "web/bridge/deployment.yaml,web/bridge-api/deployment.yaml"
+```
+
+### ENV_VAR mode - Update environment variable
+
+```yaml
+- name: Update MY_GITHUB_SHORT_SHA env value for nginx container
+  uses: loveholidays/gitops-action-yaml-updater@v1.8.2
+  with:
+    mode: ENV_VAR
+    container-name: nginx
+    env-name: MY_GITHUB_SHORT_SHA
+    new-env-value: ${{ steps.your-previous-step-id.outputs.GITHUB_SHORT_SHA }}
+    files: overlays/development-eu/deployment.yaml
+```
+
+### HELM_VALUES mode - Update default container
+
+```yaml
+- name: Update default container image in Helm values
+  uses: loveholidays/gitops-action-yaml-updater@v1.8.2
+  with:
+    mode: HELM_VALUES
+    container-name: my-app
+    new-image-tag: v1.2.3
+    files: overlays/production/values.yaml
+```
+
+### HELM_VALUES mode - Update additional container (multi-container pod)
+
+```yaml
+- name: Update additional container image in Helm values
+  uses: loveholidays/gitops-action-yaml-updater@v1.8.2
+  with:
+    mode: HELM_VALUES
+    container-name: sidecar-ui
+    new-image-tag: v2.0.0
+    files: overlays/production/values.yaml
+```
+
+This will update `.containers.sidecar-ui.image.tag` in your Helm values file.
+
+## Testing
+
+The action includes a comprehensive test suite. See [tests/README.md](tests/README.md) for details on running tests.

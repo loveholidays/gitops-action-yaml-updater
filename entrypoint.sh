@@ -164,12 +164,55 @@ for FILEPATH in $FILES; do
   fi;
 
   if [[ ${MODE} == "HELM_VALUES" ]]; then
+    # Read the default container name from the values file
+    defaultContainerName=$(yq4 '.containerName // ""' "${FILEPATH}")
+
+    # Determine if we're updating the default container or an additional container
+    if [[ -n "${defaultContainerName}" ]] && [[ "${CONTAINER_NAME}" == "${defaultContainerName}" ]]; then
+      # Updating the default container
+      targetImageKey=".image.tag"
+      targetCronJobKey=".cronJobs.*.image.tag"
+      echo " +++ + Updating default container: ${CONTAINER_NAME}"
+    elif [[ -z "${defaultContainerName}" ]]; then
+      # No default container name specified, assume default paths
+      targetImageKey=".image.tag"
+      targetCronJobKey=".cronJobs.*.image.tag"
+      echo " +++ + No default container name found, using default paths"
+    else
+      # Updating an additional container
+      targetImageKey=".containers.${CONTAINER_NAME}.image.tag"
+      targetCronJobKey=".cronJobs.${CONTAINER_NAME}.image.tag"
+      echo " +++ + Updating additional container: ${CONTAINER_NAME}"
+    fi
+
+    # Update cronJobs if present
     if [[ $(yq4 'has("cronJobs")' "${FILEPATH}" 2>/dev/null) == "true" ]]; then
-      yq4 "${HELM_CRONJOB_IMAGE_KEY} = \"${NEW_IMAGE_TAG}\"" -i ${FILEPATH}
+      yq4 "${targetCronJobKey} = \"${NEW_IMAGE_TAG}\"" -i ${FILEPATH}
+      echo " +++ + + Updated cronJob: ${targetCronJobKey}"
     fi
-    if [[ $(yq4 'has("image")' "${FILEPATH}" 2>/dev/null) == "true" ]]; then
-      yq4 "${HELM_IMAGE_KEY} = \"${NEW_IMAGE_TAG}\"" -i ${FILEPATH}
+
+    # Update image if present (for default container) or containers.<name> (for additional)
+    if [[ -n "${defaultContainerName}" ]] && [[ "${CONTAINER_NAME}" == "${defaultContainerName}" ]]; then
+      # Default container - check for .image
+      if [[ $(yq4 'has("image")' "${FILEPATH}" 2>/dev/null) == "true" ]]; then
+        yq4 "${targetImageKey} = \"${NEW_IMAGE_TAG}\"" -i ${FILEPATH}
+        echo " +++ + + Updated ${targetImageKey} in ${FILEPATH} to ${NEW_IMAGE_TAG}"
+      fi
+    elif [[ -z "${defaultContainerName}" ]]; then
+      # No container name specified, use default behavior
+      if [[ $(yq4 'has("image")' "${FILEPATH}" 2>/dev/null) == "true" ]]; then
+        yq4 "${targetImageKey} = \"${NEW_IMAGE_TAG}\"" -i ${FILEPATH}
+        echo " +++ + + Updated ${targetImageKey} in ${FILEPATH} to ${NEW_IMAGE_TAG}"
+      fi
+    else
+      # Additional container - check for .containers.<name>
+      if [[ $(yq4 "has(\"containers.${CONTAINER_NAME}\")" "${FILEPATH}" 2>/dev/null) == "true" ]]; then
+        yq4 "${targetImageKey} = \"${NEW_IMAGE_TAG}\"" -i ${FILEPATH}
+        echo " +++ + + Updated ${targetImageKey} in ${FILEPATH} to ${NEW_IMAGE_TAG}"
+      else
+        echo " +++++++++ ERROR: Container ${CONTAINER_NAME} not found in ${FILEPATH}" >&2
+        exit 1
+      fi
     fi
-    echo "+++ + + Updated ${HELM_IMAGE_KEY} key in ${FILEPATH} to ${NEW_IMAGE_TAG}"
   fi
 done

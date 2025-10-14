@@ -1,0 +1,17 @@
+containerName: api
+image:
+  repository: eu.gcr.io/test/api
+  tag: v1.0.0
+resources:
+  requests:
+    cpu: 10m
+    memory: 128Mi
+containers:
+  ui:
+    image:
+      repository: eu.gcr.io/test/ui
+      tag: v1.0.0
+    resources:
+      requests:
+        cpu: 10m
+        memory: 128Mi

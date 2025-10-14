@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-app
+spec:
+  template:
+    spec:
+      containers:
+        - name: test-app
+          image: eu.gcr.io/test/test-app:v1.0.0
+          ports:
+            - containerPort: 8080
