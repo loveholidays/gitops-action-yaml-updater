@@ -69,7 +69,7 @@ none
 
 ```yaml
 - name: Update image tag for container nginx in deployment.yaml
-  uses: loveholidays/gitops-action-yaml-updater@v1.8.3
+  uses: loveholidays/gitops-action-yaml-updater@v1.8.4
   with:
     mode: IMAGE_TAG
     container-name: nginx
@@ -81,7 +81,7 @@ none
 
 ```yaml
 - name: Update image tag for container bridge in two files
-  uses: loveholidays/gitops-action-yaml-updater@v1.8.3
+  uses: loveholidays/gitops-action-yaml-updater@v1.8.4
   with:
     mode: IMAGE_TAG
     container-name: nginx
@@ -93,7 +93,7 @@ none
 
 ```yaml
 - name: Update MY_GITHUB_SHORT_SHA env value for nginx container
-  uses: loveholidays/gitops-action-yaml-updater@v1.8.3
+  uses: loveholidays/gitops-action-yaml-updater@v1.8.4
   with:
     mode: ENV_VAR
     container-name: nginx
@@ -106,7 +106,7 @@ none
 
 ```yaml
 - name: Update default container image in Helm values
-  uses: loveholidays/gitops-action-yaml-updater@v1.8.3
+  uses: loveholidays/gitops-action-yaml-updater@v1.8.4
   with:
     mode: HELM_VALUES
     container-name: my-app
@@ -118,7 +118,7 @@ none
 
 ```yaml
 - name: Update additional container image in Helm values
-  uses: loveholidays/gitops-action-yaml-updater@v1.8.3
+  uses: loveholidays/gitops-action-yaml-updater@v1.8.4
   with:
     mode: HELM_VALUES
     container-name: sidecar-ui

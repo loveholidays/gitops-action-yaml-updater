@@ -139,8 +139,6 @@ run_test \
   "${FIXTURES_DIR}/helm-values-single-container.yaml" \
   "v2.0.0" \
   "tag: v2.0.0"
-assert_yaml_value "${TEMP_DIR}/helm-values-multi-container.yaml" '.image.tag' 'v2.0.0'
-assert_yaml_value "${TEMP_DIR}/helm-values-multi-container.yaml" '.containers.ui.image.tag' 'v1.0.0'
 
 # Test 8: HELM_VALUES mode - Multi-container (default container)
 run_test \
@@ -150,6 +148,8 @@ run_test \
   "${FIXTURES_DIR}/helm-values-multi-container.yaml" \
   "v2.0.0" \
   "tag: v2.0.0"
+assert_yaml_value "${TEMP_DIR}/helm-values-multi-container.yaml" '.image.tag' 'v2.0.0'
+assert_yaml_value "${TEMP_DIR}/helm-values-multi-container.yaml" '.containers.ui.image.tag' 'v1.0.0'
 
 # Test 9: HELM_VALUES mode - Multi-container (additional container) - THE BUG FIX TEST
 run_test \
