@@ -1,0 +1,8 @@
+containerName: test-app
+image:
+  repository: eu.gcr.io/test/test-app
+  tag: v1.0.0
+resources:
+  requests:
+    cpu: 10m
+    memory: 128Mi

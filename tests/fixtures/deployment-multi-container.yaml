@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-app
+spec:
+  template:
+    spec:
+      containers:
+        - name: api
+          image: eu.gcr.io/test/api:v1.0.0
+          ports:
+            - containerPort: 5000
+        - name: ui
+          image: eu.gcr.io/test/ui:v1.0.0
+          ports:
+            - containerPort: 3000
