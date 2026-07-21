@@ -35,13 +35,13 @@ run_test() {
   if [[ -n "${env_name}" ]]; then
     bash "${ENTRYPOINT}" "${mode}" "${container_name}" "${temp_file}" "" "${env_name}" "${new_value}" > /dev/null 2>&1 || {
       echo "  ❌ FAILED: Script execution failed"
-      ((TESTS_FAILED++))
+      ((TESTS_FAILED+=1))
       return 1
     }
   else
     bash "${ENTRYPOINT}" "${mode}" "${container_name}" "${temp_file}" "${new_value}" "" "" > /dev/null 2>&1 || {
       echo "  ❌ FAILED: Script execution failed"
-      ((TESTS_FAILED++))
+      ((TESTS_FAILED+=1))
       return 1
     }
   fi
@@ -49,12 +49,29 @@ run_test() {
   # Verify the result
   if grep -q "${expected_pattern}" "${temp_file}"; then
     echo "  ✅ PASSED"
-    ((TESTS_PASSED++))
+    ((TESTS_PASSED+=1))
   else
     echo "  ❌ FAILED: Expected pattern '${expected_pattern}' not found"
     echo "  File contents:"
     cat "${temp_file}"
-    ((TESTS_FAILED++))
+    ((TESTS_FAILED+=1))
+    return 1
+  fi
+}
+
+assert_yaml_value() {
+  local file="$1"
+  local expression="$2"
+  local expected_value="$3"
+  local actual_value
+
+  actual_value=$(yq4 "${expression}" "${file}")
+  if [[ "${actual_value}" == "${expected_value}" ]]; then
+    echo "  ✅ PASSED: ${expression} is ${expected_value}"
+    ((TESTS_PASSED+=1))
+  else
+    echo "  ❌ FAILED: Expected ${expression} to be ${expected_value}, got ${actual_value}"
+    ((TESTS_FAILED+=1))
     return 1
   fi
 }
@@ -122,6 +139,8 @@ run_test \
   "${FIXTURES_DIR}/helm-values-single-container.yaml" \
   "v2.0.0" \
   "tag: v2.0.0"
+assert_yaml_value "${TEMP_DIR}/helm-values-multi-container.yaml" '.image.tag' 'v2.0.0'
+assert_yaml_value "${TEMP_DIR}/helm-values-multi-container.yaml" '.containers.ui.image.tag' 'v1.0.0'
 
 # Test 8: HELM_VALUES mode - Multi-container (default container)
 run_test \
@@ -140,6 +159,8 @@ run_test \
   "${FIXTURES_DIR}/helm-values-multi-container.yaml" \
   "v3.0.0" \
   "tag: v3.0.0"
+assert_yaml_value "${TEMP_DIR}/helm-values-multi-container.yaml" '.containers.ui.image.tag' 'v3.0.0'
+assert_yaml_value "${TEMP_DIR}/helm-values-multi-container.yaml" '.image.tag' 'v1.0.0'
 
 echo ""
 echo "========================================="

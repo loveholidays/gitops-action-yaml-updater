@@ -18,9 +18,6 @@ FILES=$3
 NEW_IMAGE_TAG=$4
 ENV_NAME=$5
 NEW_ENV_VALUE=$6
-HELM_IMAGE_KEY=".image.tag"
-HELM_CRONJOB_IMAGE_KEY=".cronJobs.*.image.tag"
-
 if [[ ! " ${SUPPORTED_MODES[@]} " =~ " ${MODE} " ]]; then
   echo " +++++++++ ERROR MODE \"${MODE}\" is not part of the supported values [ ${SUPPORTED_MODES[@]} ] " >&2
   exit 1
@@ -198,8 +195,15 @@ for FILEPATH in $FILES; do
 
     # Update cronJobs if present
     if [[ $(yq4 'has("cronJobs")' "${FILEPATH}" 2>/dev/null) == "true" ]]; then
-      yq4 "${targetCronJobKey} = \"${NEW_IMAGE_TAG}\"" -i ${FILEPATH}
-      echo " +++ + + Updated cronJob: ${targetCronJobKey}"
+      if [[ -n "${defaultContainerName}" ]] && [[ "${CONTAINER_NAME}" != "${defaultContainerName}" ]]; then
+        if [[ $(yq4 ".cronJobs | has(\"${CONTAINER_NAME}\")" "${FILEPATH}" 2>/dev/null) == "true" ]]; then
+          yq4 "${targetCronJobKey} = \"${NEW_IMAGE_TAG}\"" -i ${FILEPATH}
+          echo " +++ + + Updated cronJob: ${targetCronJobKey}"
+        fi
+      else
+        yq4 "${targetCronJobKey} = \"${NEW_IMAGE_TAG}\"" -i ${FILEPATH}
+        echo " +++ + + Updated cronJob: ${targetCronJobKey}"
+      fi
     fi
 
     # Update image if present (for default container) or containers.<name> (for additional)
@@ -217,7 +221,7 @@ for FILEPATH in $FILES; do
       fi
     else
       # Additional container - check for .containers.<name>
-      if [[ $(yq4 "has(\"containers.${CONTAINER_NAME}\")" "${FILEPATH}" 2>/dev/null) == "true" ]]; then
+      if [[ $(yq4 "has(\"containers\") and (.containers | has(\"${CONTAINER_NAME}\"))" "${FILEPATH}" 2>/dev/null) == "true" ]]; then
         yq4 "${targetImageKey} = \"${NEW_IMAGE_TAG}\"" -i ${FILEPATH}
         echo " +++ + + Updated ${targetImageKey} in ${FILEPATH} to ${NEW_IMAGE_TAG}"
       else
