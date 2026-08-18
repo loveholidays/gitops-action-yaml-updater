@@ -182,10 +182,12 @@ for FILEPATH in $FILES; do
       targetCronJobKey=".cronJobs.*.image.tag"
       echo " +++ + Updating default container: ${CONTAINER_NAME}"
     elif [[ -z "${defaultContainerName}" ]]; then
-      # No default container name specified, assume default paths
-      targetImageKey=".image.tag"
-      targetCronJobKey=".cronJobs.*.image.tag"
-      echo " +++ + No default container name found, using default paths"
+      # Values files without containerName must match the requested image name.
+      # Do not update every CronJob image tag, because those images can belong to
+      # different containers.
+      targetImageKey=""
+      targetCronJobKey=""
+      echo " +++ + No default container name found; matching image name ${CONTAINER_NAME}"
     else
       # Updating an additional container
       targetImageKey=".containers.${CONTAINER_NAME}.image.tag"
@@ -200,7 +202,7 @@ for FILEPATH in $FILES; do
           yq4 "${targetCronJobKey} = \"${NEW_IMAGE_TAG}\"" -i ${FILEPATH}
           echo " +++ + + Updated cronJob: ${targetCronJobKey}"
         fi
-      else
+      elif [[ -n "${defaultContainerName}" ]]; then
         yq4 "${targetCronJobKey} = \"${NEW_IMAGE_TAG}\"" -i ${FILEPATH}
         echo " +++ + + Updated cronJob: ${targetCronJobKey}"
       fi
@@ -214,11 +216,15 @@ for FILEPATH in $FILES; do
         echo " +++ + + Updated ${targetImageKey} in ${FILEPATH} to ${NEW_IMAGE_TAG}"
       fi
     elif [[ -z "${defaultContainerName}" ]]; then
-      # No container name specified, use default behavior
-      if [[ $(yq4 'has("image")' "${FILEPATH}" 2>/dev/null) == "true" ]]; then
-        yq4 "${targetImageKey} = \"${NEW_IMAGE_TAG}\"" -i ${FILEPATH}
-        echo " +++ + + Updated ${targetImageKey} in ${FILEPATH} to ${NEW_IMAGE_TAG}"
+      matchingImages=$(CONTAINER_NAME="${CONTAINER_NAME}" yq4 '[.. | select(type == "!!map") | select(.image | type == "!!str") | select((.image | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME))] | length' "${FILEPATH}")
+
+      if [[ "${matchingImages}" -eq 0 ]]; then
+        echo " +++++++++ ERROR: No image named ${CONTAINER_NAME} found in ${FILEPATH}" >&2
+        exit 1
       fi
+
+      CONTAINER_NAME="${CONTAINER_NAME}" NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!str") | select((.image | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME)) | .image) |= sub(":[^/]*$"; ":" + strenv(NEW_IMAGE_TAG)))' -i "${FILEPATH}"
+      echo " +++ + + Updated ${matchingImages} image(s) named ${CONTAINER_NAME} in ${FILEPATH} to ${NEW_IMAGE_TAG}"
     else
       # Additional container - check for .containers.<name>
       if [[ $(yq4 "has(\"containers\") and (.containers | has(\"${CONTAINER_NAME}\"))" "${FILEPATH}" 2>/dev/null) == "true" ]]; then
