@@ -162,6 +162,19 @@ run_test \
 assert_yaml_value "${TEMP_DIR}/helm-values-multi-container.yaml" '.containers.ui.image.tag' 'v3.0.0'
 assert_yaml_value "${TEMP_DIR}/helm-values-multi-container.yaml" '.image.tag' 'v1.0.0'
 
+# Test 10: HELM_VALUES mode - named raw image must not update a different image
+run_test \
+  "HELM_VALUES: Update only matching raw image name" \
+  "HELM_VALUES" \
+  "load-test-tools" \
+  "${FIXTURES_DIR}/helm-values-raw-images.yaml" \
+  "prod-new" \
+  "image: eu.gcr.io/test/load-test-tools:prod-new"
+assert_yaml_value "${TEMP_DIR}/helm-values-raw-images.yaml" '.cronJobs.owlbot.initContainers[0].image' 'eu.gcr.io/test/load-test-tools:prod-new'
+assert_yaml_value "${TEMP_DIR}/helm-values-raw-images.yaml" '.cronJobs.owlbot.initContainers[1].image' 'eu.gcr.io/test/load-test-tools:prod-new'
+assert_yaml_value "${TEMP_DIR}/helm-values-raw-images.yaml" '.cronJobs.owlbot.image.tag' 'shared-old-tag'
+assert_yaml_value "${TEMP_DIR}/helm-values-raw-images.yaml" '.cronJobs.owlbot-babs.image.tag' 'shared-old-tag'
+
 echo ""
 echo "========================================="
 echo "Test Results"

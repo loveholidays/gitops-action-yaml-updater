@@ -1,0 +1,14 @@
+cronJobs:
+  owlbot:
+    initContainers:
+      - name: convert-to-ripley-nginx
+        image: eu.gcr.io/test/load-test-tools:shared-old-tag
+      - name: combine-and-sort
+        image: eu.gcr.io/test/load-test-tools:shared-old-tag
+    image:
+      repository: eu.gcr.io/test/ripley
+      tag: shared-old-tag
+  owlbot-babs:
+    image:
+      repository: eu.gcr.io/test/ripley
+      tag: shared-old-tag
