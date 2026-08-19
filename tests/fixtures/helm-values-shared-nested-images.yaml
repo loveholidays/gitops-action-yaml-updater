@@ -1,0 +1,14 @@
+---
+cronJobs:
+  hce-distance-calculator:
+    image:
+      repository: eu.gcr.io/loveholidays-ci-cd/hotel-content-enhancer
+      tag: prod-old
+  hce-distance-beach-calculator:
+    image:
+      repository: eu.gcr.io/loveholidays-ci-cd/hotel-content-enhancer
+      tag: prod-old
+  hce-distance-airport-calculator:
+    image:
+      repository: eu.gcr.io/loveholidays-ci-cd/hotel-content-enhancer
+      tag: prod-old
