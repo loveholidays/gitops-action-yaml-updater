@@ -198,6 +198,16 @@ run_test \
 assert_yaml_value "${TEMP_DIR}/helm-values-image-tag-only.yaml" '.image.tag' 'prod-new'
 assert_yaml_value "${TEMP_DIR}/helm-values-image-tag-only.yaml" '.cronJobs.cleanup.image.tag' 'prod-old'
 
+# Test 13: HELM_VALUES mode - one nested image tag with a shared image repository
+run_test \
+  "HELM_VALUES: Update only nested structured image without containerName" \
+  "HELM_VALUES" \
+  "hce-automated-updates" \
+  "${FIXTURES_DIR}/helm-values-single-nested-image.yaml" \
+  "prod-new" \
+  "tag: prod-new"
+assert_yaml_value "${TEMP_DIR}/helm-values-single-nested-image.yaml" '.cronJobs.hce-automated-updates-processor.image.tag' 'prod-new'
+
 echo ""
 echo "========================================="
 echo "Test Results"

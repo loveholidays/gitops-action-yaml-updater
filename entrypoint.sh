@@ -228,13 +228,20 @@ for FILEPATH in $FILES; do
         matchingImages=$((matchingRawImages + matchingStructuredImages))
 
         if [[ "${matchingImages}" -eq 0 ]]; then
-          echo " +++++++++ ERROR: No image named ${CONTAINER_NAME} found in ${FILEPATH}" >&2
-          exit 1
-        fi
+          structuredImageTagCandidates=$(yq4 '[.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image | has("tag"))] | length' "${FILEPATH}")
 
-        CONTAINER_NAME="${CONTAINER_NAME}" NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!str") | select((.image | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME)) | .image) |= sub(":[^/]*$"; ":" + strenv(NEW_IMAGE_TAG)))' -i "${FILEPATH}"
-        CONTAINER_NAME="${CONTAINER_NAME}" NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image.repository | type == "!!str") | select((.image.repository | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME)) | .image.tag) = strenv(NEW_IMAGE_TAG))' -i "${FILEPATH}"
-        echo " +++ + + Updated ${matchingImages} image(s) named ${CONTAINER_NAME} in ${FILEPATH} to ${NEW_IMAGE_TAG}"
+          if [[ "${structuredImageTagCandidates}" -eq 1 ]]; then
+            NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image | has("tag")) | .image.tag) = strenv(NEW_IMAGE_TAG))' -i "${FILEPATH}"
+            echo " +++ + + Updated the only structured image tag in ${FILEPATH} to ${NEW_IMAGE_TAG}"
+          else
+            echo " +++++++++ ERROR: No image named ${CONTAINER_NAME} found in ${FILEPATH}, and ${structuredImageTagCandidates} structured image tags are ambiguous" >&2
+            exit 1
+          fi
+        else
+          CONTAINER_NAME="${CONTAINER_NAME}" NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!str") | select((.image | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME)) | .image) |= sub(":[^/]*$"; ":" + strenv(NEW_IMAGE_TAG)))' -i "${FILEPATH}"
+          CONTAINER_NAME="${CONTAINER_NAME}" NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image.repository | type == "!!str") | select((.image.repository | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME)) | .image.tag) = strenv(NEW_IMAGE_TAG))' -i "${FILEPATH}"
+          echo " +++ + + Updated ${matchingImages} image(s) named ${CONTAINER_NAME} in ${FILEPATH} to ${NEW_IMAGE_TAG}"
+        fi
       fi
     else
       # Additional container - check for .containers.<name>
