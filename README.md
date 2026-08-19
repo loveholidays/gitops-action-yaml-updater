@@ -23,9 +23,9 @@ For Helm values files (HELM_VALUES mode), the action supports:
 - Additional containers (`.containers.<container-name>.image.tag`)
 - CronJob images (`.cronJobs.*.image.tag` or `.cronJobs.<container-name>.image.tag`)
 - Raw container image strings whose image name matches `container-name`, for example `image: registry.example/load-test-tools:tag`
-- Structured image maps whose repository name matches `container-name`, for example `image.repository: registry.example/my-app` with `image.tag: tag`
+- Top-level default image tags (`image.tag`), even when the repository is set in another values file or differs from `container-name`
 
-The action automatically detects whether you're updating the default container or an additional container by reading the `containerName` field from the Helm values file. Values files without `containerName` match raw or structured image values by image name and do not update unrelated image tags.
+The action automatically detects whether you're updating the default container or an additional container by reading the `containerName` field from the Helm values file. When `containerName` is absent, a top-level `image.tag` is the default container and is updated directly. Raw or nested structured image values still match by image name, so unrelated image tags are not updated.
 
 Default `""`
 

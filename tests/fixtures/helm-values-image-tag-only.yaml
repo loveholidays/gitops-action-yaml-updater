@@ -1,0 +1,7 @@
+image:
+  tag: prod-old
+cronJobs:
+  cleanup:
+    image:
+      repository: eu.gcr.io/loveholidays-ci-cd/cleanup-tools
+      tag: prod-old

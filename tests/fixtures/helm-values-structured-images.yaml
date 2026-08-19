@@ -1,5 +1,5 @@
 image:
-  repository: eu.gcr.io/loveholidays-ci-cd/hotelbeds-service
+  repository: eu.gcr.io/loveholidays-ci-cd/hotel-analyser
   tag: prod-2645d50
 cronJobs:
   cleanup:

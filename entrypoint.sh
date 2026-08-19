@@ -216,18 +216,26 @@ for FILEPATH in $FILES; do
         echo " +++ + + Updated ${targetImageKey} in ${FILEPATH} to ${NEW_IMAGE_TAG}"
       fi
     elif [[ -z "${defaultContainerName}" ]]; then
-      matchingRawImages=$(CONTAINER_NAME="${CONTAINER_NAME}" yq4 '[.. | select(type == "!!map") | select(.image | type == "!!str") | select((.image | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME))] | length' "${FILEPATH}")
-      matchingStructuredImages=$(CONTAINER_NAME="${CONTAINER_NAME}" yq4 '[.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image.repository | type == "!!str") | select((.image.repository | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME))] | length' "${FILEPATH}")
-      matchingImages=$((matchingRawImages + matchingStructuredImages))
+      # helm/charts/common derives the default container name from the release
+      # when containerName is absent. A top-level image.tag is therefore always
+      # the default container, whether the repository is set here or in a base file.
+      if [[ $(yq4 'has("image") and (.image | type == "!!map") and (.image | has("tag"))' "${FILEPATH}" 2>/dev/null) == "true" ]]; then
+        NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '.image.tag = strenv(NEW_IMAGE_TAG)' -i "${FILEPATH}"
+        echo " +++ + + Updated default structured image in ${FILEPATH} to ${NEW_IMAGE_TAG}"
+      else
+        matchingRawImages=$(CONTAINER_NAME="${CONTAINER_NAME}" yq4 '[.. | select(type == "!!map") | select(.image | type == "!!str") | select((.image | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME))] | length' "${FILEPATH}")
+        matchingStructuredImages=$(CONTAINER_NAME="${CONTAINER_NAME}" yq4 '[.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image.repository | type == "!!str") | select((.image.repository | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME))] | length' "${FILEPATH}")
+        matchingImages=$((matchingRawImages + matchingStructuredImages))
 
-      if [[ "${matchingImages}" -eq 0 ]]; then
-        echo " +++++++++ ERROR: No image named ${CONTAINER_NAME} found in ${FILEPATH}" >&2
-        exit 1
+        if [[ "${matchingImages}" -eq 0 ]]; then
+          echo " +++++++++ ERROR: No image named ${CONTAINER_NAME} found in ${FILEPATH}" >&2
+          exit 1
+        fi
+
+        CONTAINER_NAME="${CONTAINER_NAME}" NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!str") | select((.image | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME)) | .image) |= sub(":[^/]*$"; ":" + strenv(NEW_IMAGE_TAG)))' -i "${FILEPATH}"
+        CONTAINER_NAME="${CONTAINER_NAME}" NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image.repository | type == "!!str") | select((.image.repository | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME)) | .image.tag) = strenv(NEW_IMAGE_TAG))' -i "${FILEPATH}"
+        echo " +++ + + Updated ${matchingImages} image(s) named ${CONTAINER_NAME} in ${FILEPATH} to ${NEW_IMAGE_TAG}"
       fi
-
-      CONTAINER_NAME="${CONTAINER_NAME}" NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!str") | select((.image | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME)) | .image) |= sub(":[^/]*$"; ":" + strenv(NEW_IMAGE_TAG)))' -i "${FILEPATH}"
-      CONTAINER_NAME="${CONTAINER_NAME}" NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image.repository | type == "!!str") | select((.image.repository | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME)) | .image.tag) = strenv(NEW_IMAGE_TAG))' -i "${FILEPATH}"
-      echo " +++ + + Updated ${matchingImages} image(s) named ${CONTAINER_NAME} in ${FILEPATH} to ${NEW_IMAGE_TAG}"
     else
       # Additional container - check for .containers.<name>
       if [[ $(yq4 "has(\"containers\") and (.containers | has(\"${CONTAINER_NAME}\"))" "${FILEPATH}" 2>/dev/null) == "true" ]]; then
