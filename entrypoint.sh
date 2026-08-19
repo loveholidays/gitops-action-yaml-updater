@@ -216,15 +216,17 @@ for FILEPATH in $FILES; do
         echo " +++ + + Updated ${targetImageKey} in ${FILEPATH} to ${NEW_IMAGE_TAG}"
       fi
     elif [[ -z "${defaultContainerName}" ]]; then
-      matchingImages=$(CONTAINER_NAME="${CONTAINER_NAME}" yq4 '[.. | select(type == "!!map") | select(.image | type == "!!str") | select((.image | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME))] | length' "${FILEPATH}")
+      matchingStructuredImages=$(CONTAINER_NAME="${CONTAINER_NAME}" yq4 '[.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image.repository | type == "!!str") | select((.image.repository | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME))] | length' "${FILEPATH}")
+      matchingRawImages=$(CONTAINER_NAME="${CONTAINER_NAME}" yq4 '[.. | select(type == "!!map") | select(.image | type == "!!str") | select((.image | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME))] | length' "${FILEPATH}")
 
-      if [[ "${matchingImages}" -eq 0 ]]; then
+      if [[ "${matchingStructuredImages}" -eq 0 ]] && [[ "${matchingRawImages}" -eq 0 ]]; then
         echo " +++++++++ ERROR: No image named ${CONTAINER_NAME} found in ${FILEPATH}" >&2
         exit 1
       fi
 
+      CONTAINER_NAME="${CONTAINER_NAME}" NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image.repository | type == "!!str") | select((.image.repository | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME)) | .image.tag) = strenv(NEW_IMAGE_TAG))' -i "${FILEPATH}"
       CONTAINER_NAME="${CONTAINER_NAME}" NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!str") | select((.image | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME)) | .image) |= sub(":[^/]*$"; ":" + strenv(NEW_IMAGE_TAG)))' -i "${FILEPATH}"
-      echo " +++ + + Updated ${matchingImages} image(s) named ${CONTAINER_NAME} in ${FILEPATH} to ${NEW_IMAGE_TAG}"
+      echo " +++ + + Updated $((matchingStructuredImages + matchingRawImages)) image(s) named ${CONTAINER_NAME} in ${FILEPATH} to ${NEW_IMAGE_TAG}"
     else
       # Additional container - check for .containers.<name>
       if [[ $(yq4 "has(\"containers\") and (.containers | has(\"${CONTAINER_NAME}\"))" "${FILEPATH}" 2>/dev/null) == "true" ]]; then

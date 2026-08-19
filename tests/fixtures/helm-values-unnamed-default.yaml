@@ -1,0 +1,8 @@
+image:
+  repository: eu.gcr.io/loveholidays-ci-cd/amendments-service
+  tag: old-tag
+cronJobs:
+  another-service:
+    image:
+      repository: eu.gcr.io/loveholidays-ci-cd/another-service
+      tag: unchanged-tag

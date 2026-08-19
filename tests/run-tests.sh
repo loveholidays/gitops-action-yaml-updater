@@ -175,6 +175,17 @@ assert_yaml_value "${TEMP_DIR}/helm-values-raw-images.yaml" '.cronJobs.owlbot.in
 assert_yaml_value "${TEMP_DIR}/helm-values-raw-images.yaml" '.cronJobs.owlbot.image.tag' 'shared-old-tag'
 assert_yaml_value "${TEMP_DIR}/helm-values-raw-images.yaml" '.cronJobs.owlbot-babs.image.tag' 'shared-old-tag'
 
+# Test 11: HELM_VALUES mode - unnamed default structured image
+run_test \
+  "HELM_VALUES: Update unnamed default structured image" \
+  "HELM_VALUES" \
+  "amendments-service" \
+  "${FIXTURES_DIR}/helm-values-unnamed-default.yaml" \
+  "rc-new-tag" \
+  "tag: rc-new-tag"
+assert_yaml_value "${TEMP_DIR}/helm-values-unnamed-default.yaml" '.image.tag' 'rc-new-tag'
+assert_yaml_value "${TEMP_DIR}/helm-values-unnamed-default.yaml" '.cronJobs.another-service.image.tag' 'unchanged-tag'
+
 echo ""
 echo "========================================="
 echo "Test Results"
