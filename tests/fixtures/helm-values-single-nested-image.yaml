@@ -1,0 +1,6 @@
+---
+cronJobs:
+  hce-automated-updates-processor:
+    image:
+      repository: eu.gcr.io/loveholidays-ci-cd/hotel-content-enhancer
+      tag: prod-old
