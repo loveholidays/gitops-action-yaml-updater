@@ -23,8 +23,9 @@ For Helm values files (HELM_VALUES mode), the action supports:
 - Additional containers (`.containers.<container-name>.image.tag`)
 - CronJob images (`.cronJobs.*.image.tag` or `.cronJobs.<container-name>.image.tag`)
 - Raw container image strings whose image name matches `container-name`, for example `image: registry.example/load-test-tools:tag`
+- Structured image maps whose repository name matches `container-name`, for example `image.repository: registry.example/my-app` with `image.tag: tag`
 
-The action automatically detects whether you're updating the default container or an additional container by reading the `containerName` field from the Helm values file. Values files without `containerName` match raw image strings by their image name and do not update unrelated image tags.
+The action automatically detects whether you're updating the default container or an additional container by reading the `containerName` field from the Helm values file. Values files without `containerName` match raw or structured image values by image name and do not update unrelated image tags.
 
 Default `""`
 
@@ -70,7 +71,7 @@ none
 
 ```yaml
 - name: Update image tag for container nginx in deployment.yaml
-  uses: loveholidays/gitops-action-yaml-updater@v1.8.5
+  uses: loveholidays/gitops-action-yaml-updater@v1.8.6
   with:
     mode: IMAGE_TAG
     container-name: nginx
@@ -82,7 +83,7 @@ none
 
 ```yaml
 - name: Update image tag for container bridge in two files
-  uses: loveholidays/gitops-action-yaml-updater@v1.8.5
+  uses: loveholidays/gitops-action-yaml-updater@v1.8.6
   with:
     mode: IMAGE_TAG
     container-name: nginx
@@ -94,7 +95,7 @@ none
 
 ```yaml
 - name: Update MY_GITHUB_SHORT_SHA env value for nginx container
-  uses: loveholidays/gitops-action-yaml-updater@v1.8.5
+  uses: loveholidays/gitops-action-yaml-updater@v1.8.6
   with:
     mode: ENV_VAR
     container-name: nginx
@@ -107,7 +108,7 @@ none
 
 ```yaml
 - name: Update default container image in Helm values
-  uses: loveholidays/gitops-action-yaml-updater@v1.8.5
+  uses: loveholidays/gitops-action-yaml-updater@v1.8.6
   with:
     mode: HELM_VALUES
     container-name: my-app
@@ -119,7 +120,7 @@ none
 
 ```yaml
 - name: Update additional container image in Helm values
-  uses: loveholidays/gitops-action-yaml-updater@v1.8.5
+  uses: loveholidays/gitops-action-yaml-updater@v1.8.6
   with:
     mode: HELM_VALUES
     container-name: sidecar-ui

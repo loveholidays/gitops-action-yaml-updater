@@ -175,6 +175,18 @@ assert_yaml_value "${TEMP_DIR}/helm-values-raw-images.yaml" '.cronJobs.owlbot.in
 assert_yaml_value "${TEMP_DIR}/helm-values-raw-images.yaml" '.cronJobs.owlbot.image.tag' 'shared-old-tag'
 assert_yaml_value "${TEMP_DIR}/helm-values-raw-images.yaml" '.cronJobs.owlbot-babs.image.tag' 'shared-old-tag'
 
+# Test 11: HELM_VALUES mode - structured images without containerName must match repository
+run_test \
+  "HELM_VALUES: Update matching structured image without containerName" \
+  "HELM_VALUES" \
+  "hotelbeds-service" \
+  "${FIXTURES_DIR}/helm-values-structured-images.yaml" \
+  "prod-new" \
+  "tag: prod-new"
+assert_yaml_value "${TEMP_DIR}/helm-values-structured-images.yaml" '.image.tag' 'prod-new'
+assert_yaml_value "${TEMP_DIR}/helm-values-structured-images.yaml" '.cronJobs.cleanup.image.tag' 'prod-old'
+assert_yaml_value "${TEMP_DIR}/helm-values-structured-images.yaml" '.cronJobs.raw-helper.image' 'eu.gcr.io/loveholidays-ci-cd/load-test-tools:prod-old'
+
 echo ""
 echo "========================================="
 echo "Test Results"
