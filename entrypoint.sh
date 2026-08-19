@@ -216,7 +216,9 @@ for FILEPATH in $FILES; do
         echo " +++ + + Updated ${targetImageKey} in ${FILEPATH} to ${NEW_IMAGE_TAG}"
       fi
     elif [[ -z "${defaultContainerName}" ]]; then
-      matchingImages=$(CONTAINER_NAME="${CONTAINER_NAME}" yq4 '[.. | select(type == "!!map") | select(.image | type == "!!str") | select((.image | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME))] | length' "${FILEPATH}")
+      matchingRawImages=$(CONTAINER_NAME="${CONTAINER_NAME}" yq4 '[.. | select(type == "!!map") | select(.image | type == "!!str") | select((.image | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME))] | length' "${FILEPATH}")
+      matchingStructuredImages=$(CONTAINER_NAME="${CONTAINER_NAME}" yq4 '[.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image.repository | type == "!!str") | select((.image.repository | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME))] | length' "${FILEPATH}")
+      matchingImages=$((matchingRawImages + matchingStructuredImages))
 
       if [[ "${matchingImages}" -eq 0 ]]; then
         echo " +++++++++ ERROR: No image named ${CONTAINER_NAME} found in ${FILEPATH}" >&2
@@ -224,6 +226,7 @@ for FILEPATH in $FILES; do
       fi
 
       CONTAINER_NAME="${CONTAINER_NAME}" NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!str") | select((.image | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME)) | .image) |= sub(":[^/]*$"; ":" + strenv(NEW_IMAGE_TAG)))' -i "${FILEPATH}"
+      CONTAINER_NAME="${CONTAINER_NAME}" NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image.repository | type == "!!str") | select((.image.repository | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME)) | .image.tag) = strenv(NEW_IMAGE_TAG))' -i "${FILEPATH}"
       echo " +++ + + Updated ${matchingImages} image(s) named ${CONTAINER_NAME} in ${FILEPATH} to ${NEW_IMAGE_TAG}"
     else
       # Additional container - check for .containers.<name>

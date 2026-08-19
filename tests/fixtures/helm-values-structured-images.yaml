@@ -1,0 +1,10 @@
+image:
+  repository: eu.gcr.io/loveholidays-ci-cd/hotelbeds-service
+  tag: prod-2645d50
+cronJobs:
+  cleanup:
+    image:
+      repository: eu.gcr.io/loveholidays-ci-cd/cleanup-tools
+      tag: prod-old
+  raw-helper:
+    image: eu.gcr.io/loveholidays-ci-cd/load-test-tools:prod-old
