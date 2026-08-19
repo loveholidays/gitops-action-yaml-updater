@@ -59,6 +59,34 @@ run_test() {
   fi
 }
 
+run_failure_test() {
+  local test_name="$1"
+  local mode="$2"
+  local container_name="$3"
+  local fixture_file="$4"
+  local new_value="$5"
+  local expected_error="$6"
+  local temp_file="${TEMP_DIR}/$(basename ${fixture_file})"
+  local output
+
+  echo "Running test: ${test_name}"
+  cp "${fixture_file}" "${temp_file}"
+
+  if output=$(bash "${ENTRYPOINT}" "${mode}" "${container_name}" "${temp_file}" "${new_value}" "" "" 2>&1); then
+    echo "  ❌ FAILED: Script execution succeeded"
+    ((TESTS_FAILED+=1))
+    return 1
+  elif [[ "${output}" == *"${expected_error}"* ]]; then
+    echo "  ✅ PASSED"
+    ((TESTS_PASSED+=1))
+  else
+    echo "  ❌ FAILED: Expected error '${expected_error}' not found"
+    echo "  Output: ${output}"
+    ((TESTS_FAILED+=1))
+    return 1
+  fi
+}
+
 assert_yaml_value() {
   local file="$1"
   local expression="$2"
@@ -207,6 +235,27 @@ run_test \
   "prod-new" \
   "tag: prod-new"
 assert_yaml_value "${TEMP_DIR}/helm-values-single-nested-image.yaml" '.cronJobs.hce-automated-updates-processor.image.tag' 'prod-new'
+
+# Test 14: HELM_VALUES mode - nested image tags sharing one repository
+run_test \
+  "HELM_VALUES: Update nested structured images with one shared repository" \
+  "HELM_VALUES" \
+  "hotel-content-enhancer-distance-job" \
+  "${FIXTURES_DIR}/helm-values-shared-nested-images.yaml" \
+  "prod-new" \
+  "tag: prod-new"
+assert_yaml_value "${TEMP_DIR}/helm-values-shared-nested-images.yaml" '.cronJobs.hce-distance-calculator.image.tag' 'prod-new'
+assert_yaml_value "${TEMP_DIR}/helm-values-shared-nested-images.yaml" '.cronJobs.hce-distance-beach-calculator.image.tag' 'prod-new'
+assert_yaml_value "${TEMP_DIR}/helm-values-shared-nested-images.yaml" '.cronJobs.hce-distance-airport-calculator.image.tag' 'prod-new'
+
+# Test 15: HELM_VALUES mode - distinct nested repositories remain ambiguous
+run_failure_test \
+  "HELM_VALUES: Reject nested structured images with distinct repositories" \
+  "HELM_VALUES" \
+  "unknown-workload" \
+  "${FIXTURES_DIR}/helm-values-ambiguous-nested-images.yaml" \
+  "prod-new" \
+  "structured image tags are ambiguous"
 
 echo ""
 echo "========================================="

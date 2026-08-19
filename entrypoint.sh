@@ -229,10 +229,15 @@ for FILEPATH in $FILES; do
 
         if [[ "${matchingImages}" -eq 0 ]]; then
           structuredImageTagCandidates=$(yq4 '[.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image | has("tag"))] | length' "${FILEPATH}")
+          structuredImageTagRepositories=$(yq4 '[.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image | has("tag")) | select(.image.repository | type == "!!str") | .image.repository] | length' "${FILEPATH}")
+          distinctStructuredImageRepositories=$(yq4 '[.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image | has("tag")) | select(.image.repository | type == "!!str") | .image.repository] | unique | length' "${FILEPATH}")
 
           if [[ "${structuredImageTagCandidates}" -eq 1 ]]; then
             NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image | has("tag")) | .image.tag) = strenv(NEW_IMAGE_TAG))' -i "${FILEPATH}"
             echo " +++ + + Updated the only structured image tag in ${FILEPATH} to ${NEW_IMAGE_TAG}"
+          elif [[ "${structuredImageTagCandidates}" -eq "${structuredImageTagRepositories}" ]] && [[ "${distinctStructuredImageRepositories}" -eq 1 ]]; then
+            NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image | has("tag")) | .image.tag) = strenv(NEW_IMAGE_TAG))' -i "${FILEPATH}"
+            echo " +++ + + Updated ${structuredImageTagCandidates} structured image tags sharing one repository in ${FILEPATH} to ${NEW_IMAGE_TAG}"
           else
             echo " +++++++++ ERROR: No image named ${CONTAINER_NAME} found in ${FILEPATH}, and ${structuredImageTagCandidates} structured image tags are ambiguous" >&2
             exit 1

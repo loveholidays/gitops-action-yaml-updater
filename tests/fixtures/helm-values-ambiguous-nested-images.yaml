@@ -1,0 +1,10 @@
+---
+cronJobs:
+  first:
+    image:
+      repository: eu.gcr.io/loveholidays-ci-cd/service-a
+      tag: prod-old
+  second:
+    image:
+      repository: eu.gcr.io/loveholidays-ci-cd/service-b
+      tag: prod-old
