@@ -216,36 +216,32 @@ for FILEPATH in $FILES; do
         echo " +++ + + Updated ${targetImageKey} in ${FILEPATH} to ${NEW_IMAGE_TAG}"
       fi
     elif [[ -z "${defaultContainerName}" ]]; then
-      # helm/charts/common derives the default container name from the release
-      # when containerName is absent. A top-level image.tag is therefore always
-      # the default container, whether the repository is set here or in a base file.
-      if [[ $(yq4 'has("image") and (.image | type == "!!map") and (.image | has("tag"))' "${FILEPATH}" 2>/dev/null) == "true" ]]; then
+      matchingRawImages=$(CONTAINER_NAME="${CONTAINER_NAME}" yq4 '[.. | select(type == "!!map") | select(.image | type == "!!str") | select((.image | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME))] | length' "${FILEPATH}")
+      matchingStructuredImages=$(CONTAINER_NAME="${CONTAINER_NAME}" yq4 '[.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image.repository | type == "!!str") | select((.image.repository | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME))] | length' "${FILEPATH}")
+      matchingImages=$((matchingRawImages + matchingStructuredImages))
+
+      # Fall back to the top-level default when no repository identifies the target.
+      if [[ "${matchingImages}" -gt 0 ]]; then
+        CONTAINER_NAME="${CONTAINER_NAME}" NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!str") | select((.image | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME)) | .image) |= sub(":[^/]*$"; ":" + strenv(NEW_IMAGE_TAG)))' -i "${FILEPATH}"
+        CONTAINER_NAME="${CONTAINER_NAME}" NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image.repository | type == "!!str") | select((.image.repository | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME)) | .image.tag) = strenv(NEW_IMAGE_TAG))' -i "${FILEPATH}"
+        echo " +++ + + Updated ${matchingImages} image(s) named ${CONTAINER_NAME} in ${FILEPATH} to ${NEW_IMAGE_TAG}"
+      elif [[ $(yq4 'has("image") and (.image | type == "!!map") and (.image | has("tag"))' "${FILEPATH}" 2>/dev/null) == "true" ]]; then
         NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '.image.tag = strenv(NEW_IMAGE_TAG)' -i "${FILEPATH}"
         echo " +++ + + Updated default structured image in ${FILEPATH} to ${NEW_IMAGE_TAG}"
       else
-        matchingRawImages=$(CONTAINER_NAME="${CONTAINER_NAME}" yq4 '[.. | select(type == "!!map") | select(.image | type == "!!str") | select((.image | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME))] | length' "${FILEPATH}")
-        matchingStructuredImages=$(CONTAINER_NAME="${CONTAINER_NAME}" yq4 '[.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image.repository | type == "!!str") | select((.image.repository | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME))] | length' "${FILEPATH}")
-        matchingImages=$((matchingRawImages + matchingStructuredImages))
+        structuredImageTagCandidates=$(yq4 '[.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image | has("tag"))] | length' "${FILEPATH}")
+        structuredImageTagRepositories=$(yq4 '[.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image | has("tag")) | select(.image.repository | type == "!!str") | .image.repository] | length' "${FILEPATH}")
+        distinctStructuredImageRepositories=$(yq4 '[.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image | has("tag")) | select(.image.repository | type == "!!str") | .image.repository] | unique | length' "${FILEPATH}")
 
-        if [[ "${matchingImages}" -eq 0 ]]; then
-          structuredImageTagCandidates=$(yq4 '[.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image | has("tag"))] | length' "${FILEPATH}")
-          structuredImageTagRepositories=$(yq4 '[.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image | has("tag")) | select(.image.repository | type == "!!str") | .image.repository] | length' "${FILEPATH}")
-          distinctStructuredImageRepositories=$(yq4 '[.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image | has("tag")) | select(.image.repository | type == "!!str") | .image.repository] | unique | length' "${FILEPATH}")
-
-          if [[ "${structuredImageTagCandidates}" -eq 1 ]]; then
-            NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image | has("tag")) | .image.tag) = strenv(NEW_IMAGE_TAG))' -i "${FILEPATH}"
-            echo " +++ + + Updated the only structured image tag in ${FILEPATH} to ${NEW_IMAGE_TAG}"
-          elif [[ "${structuredImageTagCandidates}" -eq "${structuredImageTagRepositories}" ]] && [[ "${distinctStructuredImageRepositories}" -eq 1 ]]; then
-            NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image | has("tag")) | .image.tag) = strenv(NEW_IMAGE_TAG))' -i "${FILEPATH}"
-            echo " +++ + + Updated ${structuredImageTagCandidates} structured image tags sharing one repository in ${FILEPATH} to ${NEW_IMAGE_TAG}"
-          else
-            echo " +++++++++ ERROR: No image named ${CONTAINER_NAME} found in ${FILEPATH}, and ${structuredImageTagCandidates} structured image tags are ambiguous" >&2
-            exit 1
-          fi
+        if [[ "${structuredImageTagCandidates}" -eq 1 ]]; then
+          NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image | has("tag")) | .image.tag) = strenv(NEW_IMAGE_TAG))' -i "${FILEPATH}"
+          echo " +++ + + Updated the only structured image tag in ${FILEPATH} to ${NEW_IMAGE_TAG}"
+        elif [[ "${structuredImageTagCandidates}" -eq "${structuredImageTagRepositories}" ]] && [[ "${distinctStructuredImageRepositories}" -eq 1 ]]; then
+          NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image | has("tag")) | .image.tag) = strenv(NEW_IMAGE_TAG))' -i "${FILEPATH}"
+          echo " +++ + + Updated ${structuredImageTagCandidates} structured image tags sharing one repository in ${FILEPATH} to ${NEW_IMAGE_TAG}"
         else
-          CONTAINER_NAME="${CONTAINER_NAME}" NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!str") | select((.image | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME)) | .image) |= sub(":[^/]*$"; ":" + strenv(NEW_IMAGE_TAG)))' -i "${FILEPATH}"
-          CONTAINER_NAME="${CONTAINER_NAME}" NEW_IMAGE_TAG="${NEW_IMAGE_TAG}" yq4 '((.. | select(type == "!!map") | select(.image | type == "!!map") | select(.image.repository | type == "!!str") | select((.image.repository | sub("@.*$"; "") | sub(":[^/]*$"; "") | split("/") | .[-1]) == strenv(CONTAINER_NAME)) | .image.tag) = strenv(NEW_IMAGE_TAG))' -i "${FILEPATH}"
-          echo " +++ + + Updated ${matchingImages} image(s) named ${CONTAINER_NAME} in ${FILEPATH} to ${NEW_IMAGE_TAG}"
+          echo " +++++++++ ERROR: No image named ${CONTAINER_NAME} found in ${FILEPATH}, and ${structuredImageTagCandidates} structured image tags are ambiguous" >&2
+          exit 1
         fi
       fi
     else
