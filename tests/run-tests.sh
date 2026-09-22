@@ -257,6 +257,18 @@ run_failure_test \
   "prod-new" \
   "structured image tags are ambiguous"
 
+run_test \
+  "HELM_VALUES: Prefer matching nested image over default image" \
+  "HELM_VALUES" \
+  "worker-app" \
+  "${FIXTURES_DIR}/helm-values-multi-container-without-container-name.yaml" \
+  "worker-new" \
+  "tag: worker-new"
+assert_yaml_value "${TEMP_DIR}/helm-values-multi-container-without-container-name.yaml" '.containers.worker.image.tag' 'worker-new'
+assert_yaml_value "${TEMP_DIR}/helm-values-multi-container-without-container-name.yaml" '.image.tag' 'default-old'
+assert_yaml_value "${TEMP_DIR}/helm-values-multi-container-without-container-name.yaml" '.containers.default-helper.image.tag' 'default-old'
+assert_yaml_value "${TEMP_DIR}/helm-values-multi-container-without-container-name.yaml" '.containers.other-worker.image.tag' 'other-worker-old'
+
 echo ""
 echo "========================================="
 echo "Test Results"

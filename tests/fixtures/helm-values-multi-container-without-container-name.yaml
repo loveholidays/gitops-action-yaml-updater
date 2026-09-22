@@ -1,0 +1,16 @@
+image:
+  repository: eu.gcr.io/test/default-app
+  tag: default-old
+containers:
+  default-helper:
+    image:
+      repository: eu.gcr.io/test/default-app
+      tag: default-old
+  worker:
+    image:
+      repository: eu.gcr.io/test/worker-app
+      tag: worker-old
+  other-worker:
+    image:
+      repository: eu.gcr.io/test/other-worker-app
+      tag: other-worker-old
