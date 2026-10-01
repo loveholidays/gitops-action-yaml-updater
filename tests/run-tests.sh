@@ -121,6 +121,7 @@ run_test \
   "${FIXTURES_DIR}/deployment-multi-container.yaml" \
   "v2.0.0" \
   "image: eu.gcr.io/test/api:v2.0.0"
+assert_yaml_value "${TEMP_DIR}/deployment-multi-container.yaml" '.spec.template.spec.containers[1].image' 'eu.gcr.io/test/ui:v1.0.0'
 
 # Test 3: IMAGE_TAG mode - Deployment with multiple containers (second container)
 run_test \
@@ -158,6 +159,8 @@ run_test \
   "staging" \
   "value: staging" \
   "ENVIRONMENT"
+assert_yaml_value "${TEMP_DIR}/statefulset.yaml" '.spec.template.spec.containers[0].image' 'eu.gcr.io/test/test-app:v1.0.0'
+assert_yaml_value "${TEMP_DIR}/statefulset.yaml" '.spec.serviceName' 'test-service'
 
 # Test 7: HELM_VALUES mode - Single container (default)
 run_test \
@@ -268,6 +271,14 @@ assert_yaml_value "${TEMP_DIR}/helm-values-multi-container-without-container-nam
 assert_yaml_value "${TEMP_DIR}/helm-values-multi-container-without-container-name.yaml" '.image.tag' 'default-old'
 assert_yaml_value "${TEMP_DIR}/helm-values-multi-container-without-container-name.yaml" '.containers.default-helper.image.tag' 'default-old'
 assert_yaml_value "${TEMP_DIR}/helm-values-multi-container-without-container-name.yaml" '.containers.other-worker.image.tag' 'other-worker-old'
+
+mkdir -p "${TEMP_DIR}/kustomize"
+cp "${FIXTURES_DIR}/kustomization.yaml" "${TEMP_DIR}/kustomize/kustomization.yaml"
+cp "${FIXTURES_DIR}/deployment-single-container.yaml" "${TEMP_DIR}/kustomize/deployment-single-container.yaml"
+bash "${ENTRYPOINT}" IMAGE_TAG test-app "${TEMP_DIR}/kustomize/kustomization.yaml" v2.0.0 "" ""
+assert_yaml_value "${TEMP_DIR}/kustomize/kustomization.yaml" '.images[0].newTag' 'v2.0.0'
+kustomize build "${TEMP_DIR}/kustomize" > "${TEMP_DIR}/rendered.yaml"
+assert_yaml_value "${TEMP_DIR}/rendered.yaml" '.spec.template.spec.containers[0].image' 'eu.gcr.io/test/test-app:v2.0.0'
 
 echo ""
 echo "========================================="

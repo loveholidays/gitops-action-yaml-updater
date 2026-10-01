@@ -1,36 +1,84 @@
 name: docker
-
 on:
+  pull_request:
   workflow_dispatch:
   push:
     branches:
       - 'master'
     tags:
       - "v*.*.*"
-
+permissions:
+  contents: read
 jobs:
-  docker:
+  test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        architecture: [amd64, arm64]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4.4.0
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v4.4.1
+      - name: Build test image
+        uses: docker/build-push-action@v7.4.0
+        with:
+          context: .
+          platforms: linux/${{ matrix.architecture }}
+          load: true
+          tags: gitops-updater:test
+      - name: Test native tools and update modes
+        env:
+          PLATFORM: linux/${{ matrix.architecture }}
+          ARCHITECTURE: ${{ matrix.architecture }}
+        run: |
+          test "$(docker image inspect gitops-updater:test --format '{{.Architecture}}')" = "$ARCHITECTURE"
+          docker run --rm --platform "$PLATFORM" --entrypoint /bin/bash \
+            -v "$PWD:/workspace:ro" gitops-updater:test -e -c \
+            'yq --version; yq4 --version; kustomize version; bash /workspace/tests/run-tests.sh'
+  docker:
+    needs: test
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Log in to the Container registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: ++ Export global vars for current job
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4.4.0
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v4.4.1
+      - name: Export image version
         id: current-job
         run: |
-          if [ ${{github.ref_name}} = "master" ]; then
-            echo "::set-output name=VERSION::latest"
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then
+            echo "VERSION=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
           else
-            echo "::set-output name=VERSION::${{ github.ref_name }}"
+            echo "VERSION=latest" >> "$GITHUB_OUTPUT"
           fi
       - name: Build and push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v7.4.0
         with:
           context: .
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ghcr.io/loveholidays/gitops-action-yaml-updater:${{ steps.current-job.outputs.VERSION }}
+      - name: Verify published platforms
+        env:
+          IMAGE: ghcr.io/loveholidays/gitops-action-yaml-updater:${{ steps.current-job.outputs.VERSION }}
+        run: |
+          docker buildx imagetools inspect "$IMAGE" --raw | jq -e '
+            [.manifests[].platform | select(.os == "linux") | .architecture] as $architectures
+            | ($architectures | index("amd64") != null) and ($architectures | index("arm64") != null)
+          '
