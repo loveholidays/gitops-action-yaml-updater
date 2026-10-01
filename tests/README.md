@@ -21,10 +21,11 @@ The tests require the following tools to be installed:
 **Using Docker (Recommended):**
 ```bash
 # Build the Docker image (includes all dependencies)
-docker build -t gitops-updater .
+docker buildx build --platform linux/arm64 --load -t gitops-updater .
 
 # Run tests inside the container
-docker run --rm gitops-updater bash -c "cp -r /tests /tmp/tests && cd /tmp && /tmp/tests/run-tests.sh"
+docker run --rm --platform linux/arm64 --entrypoint /bin/bash \
+  -v "$PWD:/workspace:ro" gitops-updater /workspace/tests/run-tests.sh
 ```
 
 **Local installation (Advanced):**
@@ -56,8 +57,14 @@ cd tests
 **Using Docker (recommended):**
 ```bash
 docker build -t gitops-updater .
-docker run --rm -v $(pwd)/tests:/tests gitops-updater bash -c "cd / && tests/run-tests.sh"
+docker run --rm --entrypoint /bin/bash -v "$PWD:/workspace:ro" \
+  gitops-updater /workspace/tests/run-tests.sh
 ```
+
+Run these commands from the repository root. Repeat the Buildx example with
+`linux/amd64` to check the other platform. CI runs both platforms, including
+tool execution, all update modes, preservation of unrelated fields, and
+Kustomization image updates. Tests write only temporary fixture copies.
 
 ## Test Coverage
 
