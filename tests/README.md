@@ -76,9 +76,11 @@ The test suite covers the following scenarios:
 - Multi-container Deployment (second container)
 - CronJob
 - StatefulSet
+- Job
 
 ### ENV_VAR Mode
 - Updating environment variables in StatefulSet
+- Updating environment variables in Job
 
 ### HELM_VALUES Mode
 - Single container (default container)
@@ -94,6 +96,7 @@ Test fixtures are located in `tests/fixtures/` and include:
 - `helm-values-multi-container.yaml` - Helm values with default + additional containers
 - `cronjob.yaml` - CronJob resource
 - `statefulset.yaml` - StatefulSet with environment variables
+- `job.yaml` - Job with an environment variable, as used for database migrations
 
 ## Adding New Tests
 

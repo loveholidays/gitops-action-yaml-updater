@@ -272,6 +272,27 @@ assert_yaml_value "${TEMP_DIR}/helm-values-multi-container-without-container-nam
 assert_yaml_value "${TEMP_DIR}/helm-values-multi-container-without-container-name.yaml" '.containers.default-helper.image.tag' 'default-old'
 assert_yaml_value "${TEMP_DIR}/helm-values-multi-container-without-container-name.yaml" '.containers.other-worker.image.tag' 'other-worker-old'
 
+# Test 16: IMAGE_TAG mode - Job
+run_test \
+  "IMAGE_TAG: Update Job" \
+  "IMAGE_TAG" \
+  "test-migrate" \
+  "${FIXTURES_DIR}/job.yaml" \
+  "v2.0.0" \
+  "image: eu.gcr.io/test/migrate:v2.0.0"
+assert_yaml_value "${TEMP_DIR}/job.yaml" '.spec.template.spec.containers[0].env[0].value' 'production'
+
+# Test 17: ENV_VAR mode - Job
+run_test \
+  "ENV_VAR: Update environment variable in Job" \
+  "ENV_VAR" \
+  "test-migrate" \
+  "${FIXTURES_DIR}/job.yaml" \
+  "staging" \
+  "value: staging" \
+  "ENVIRONMENT"
+assert_yaml_value "${TEMP_DIR}/job.yaml" '.spec.template.spec.containers[0].image' 'eu.gcr.io/test/migrate:v1.0.0'
+
 mkdir -p "${TEMP_DIR}/kustomize"
 cp "${FIXTURES_DIR}/kustomization.yaml" "${TEMP_DIR}/kustomize/kustomization.yaml"
 cp "${FIXTURES_DIR}/deployment-single-container.yaml" "${TEMP_DIR}/kustomize/deployment-single-container.yaml"
