@@ -130,24 +130,22 @@ none
 
 This will update `.containers.sidecar-ui.image.tag` in your Helm values file.
 
-## ARM64 release
+## Multi-architecture image
 
-The v1.8.11 release adds native `linux/amd64` and `linux/arm64` images without
-changing action inputs or update modes. The Docker build selects native yq
-2.1.1, yq 4.35.1, and Kustomize 5.8.2 binaries with `TARGETARCH`. Other
-architectures are rejected. The entrypoint and YAML update behaviour are unchanged.
+The updater image supports `linux/amd64` and `linux/arm64` without changing
+action inputs or update modes. The Docker build selects native yq
+3.4.1, yq 4.35.1, and Kustomize 5.8.2 binaries with `TARGETARCH`, checks each
+against its upstream SHA-256 checksum, and refreshes Alpine's corrected CA
+trust before downloading. Other architectures are rejected. The entrypoint and
+YAML update behaviour are unchanged.
 
 CI builds and tests both architectures on pull requests. Publication runs only
 after both test jobs pass, and verifies that the image manifest contains both
 platforms. ARM64 CI execution uses QEMU on a GitHub-hosted AMD64 runner; this is
 not a substitute for validation on the staging ARC runner.
 
-After merge, let the master build publish `latest`, then publish the v1.8.11 tag
-from the merged commit. Verify the versioned manifest before updating callers:
-
-```sh
-docker buildx imagetools inspect ghcr.io/loveholidays/gitops-action-yaml-updater:v1.8.11
-```
+Update action and workflow image references only after the corresponding
+versioned image has been published and its multi-platform manifest verified.
 
 Do not update caller references before the versioned image exists. The action
 metadata in this release points to v1.8.11; existing v1.8.10 callers and images
