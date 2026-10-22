@@ -26,7 +26,7 @@ inputs:
     default: ''
 runs:
   using: 'docker'
-  image: 'docker://ghcr.io/loveholidays/gitops-action-yaml-updater:v1.8.11'
+  image: 'docker://ghcr.io/loveholidays/gitops-action-yaml-updater@sha256:5e29c11409cfe100cc63628cf1e4dec9fbd32e9973bf5fe8ae65f2ed493419e4'
   args:
     - ${{ inputs.mode }}
     - ${{ inputs.container-name }}
