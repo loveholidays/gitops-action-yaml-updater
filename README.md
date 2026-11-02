@@ -13,10 +13,10 @@ This also supports kustomize images: newTag directive
 **Required** The name of the container present in the pod definition
 
 For docker container image tag we support
-`Deployment StatefulSet CronJob or Kustomization images:newTag` object types
+`Deployment StatefulSet Job CronJob or Kustomization images:newTag` object types
 
 For Environment variable values we support
-`Deployment StatefulSet` object types
+`Deployment StatefulSet Job` object types
 
 For Helm values files (HELM_VALUES mode), the action supports:
 - Default container images (`.image.tag`)

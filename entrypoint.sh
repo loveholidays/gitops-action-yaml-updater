@@ -35,7 +35,7 @@ for FILEPATH in $FILES; do
 
 
   if [[ ${MODE} == "IMAGE_TAG" ]]; then
-    SUPPORTED_OBJECT_KINDS=(Deployment StatefulSet CronJob Kustomization)
+    SUPPORTED_OBJECT_KINDS=(Deployment StatefulSet Job CronJob Kustomization)
     if [ -z "${NEW_IMAGE_TAG}" ]; then
       echo " +++++++++ ERROR NEW_IMAGE_TAG  \"${NEW_IMAGE_TAG}\" is not correct " >&2
       exit 1
@@ -49,7 +49,7 @@ for FILEPATH in $FILES; do
       exit 1
     fi
 
-    if [[ ${objectKind} == "Deployment" ]] || [[ ${objectKind} == "StatefulSet" ]] ; then
+    if [[ ${objectKind} == "Deployment" ]] || [[ ${objectKind} == "StatefulSet" ]] || [[ ${objectKind} == "Job" ]] ; then
       containerPosition=$(yq r ${FILEPATH} spec.template.spec.containers.*.name | grep -n ${CONTAINER_NAME}$ | cut -d: -f1)
       containerIndex=$((${containerPosition/M/}-1))
       if (( ${containerIndex} < 0 )) ; then
@@ -137,7 +137,7 @@ for FILEPATH in $FILES; do
   fi
 
   if [[ ${MODE} == "ENV_VAR" ]]; then
-    SUPPORTED_OBJECT_KINDS=(Deployment StatefulSet)
+    SUPPORTED_OBJECT_KINDS=(Deployment StatefulSet Job)
     objectKind=$(yq r ${FILEPATH} kind)
     echo " +++ + Detected Object kind as \"${objectKind}\" "
 
@@ -146,7 +146,7 @@ for FILEPATH in $FILES; do
       exit 1
     fi
 
-    if [[ ${objectKind} == "Deployment" ]] || [[ ${objectKind} == "StatefulSet" ]] ; then
+    if [[ ${objectKind} == "Deployment" ]] || [[ ${objectKind} == "StatefulSet" ]] || [[ ${objectKind} == "Job" ]] ; then
       containerPosition=$(yq r ${FILEPATH} spec.template.spec.containers.*.name | grep -n ${CONTAINER_NAME}$ | cut -d: -f1)
       containerIndex=$((${containerPosition/M/}-1))
       if (( ${containerIndex} < 0 )); then
